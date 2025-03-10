@@ -18,7 +18,7 @@
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
-            color: white;
+            color: rgba(255, 255, 255, 1); /* Brighter body text */
         }
 
         /* Animated Particles / Bokeh Effect */
@@ -65,10 +65,12 @@
             text-decoration: none;
             font-size: 1.2em;
             transition: color 0.3s ease;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1); /* Brighter text shadow on links */
         }
 
         nav a:hover {
             color: #7289da;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 1); /* Stronger glow effect */
         }
 
         /* Hero Section */
@@ -87,7 +89,7 @@
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(114, 137, 218, 0.3);
+            text-shadow: 0 0 35px rgba(255, 255, 255, 1); /* Stronger glow for the title */
             animation: float 3s ease-in-out infinite;
         }
 
@@ -113,7 +115,7 @@
             opacity: 0;
             transition: all 0.6s ease;
             border: 1px solid rgba(114, 137, 218, 0.3);
-            box-shadow: 0 0 20px rgba(114, 137, 218, 0.1);
+            box-shadow: 0 0 30px rgba(114, 137, 218, 0.4); /* Bright shadow effect */
         }
 
         .feature-card.visible {
@@ -122,8 +124,9 @@
         }
 
         .feature-card h2 {
-            color: #7289da;
+            color: #7289da; /* Brighter shade */
             margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1); /* Lighter text shadow for headers */
         }
 
         /* Boxes Section */
@@ -147,18 +150,19 @@
             color: white;
             border: 1px solid rgba(114, 137, 218, 0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 0 15px rgba(114, 137, 218, 0.1);
+            box-shadow: 0 0 30px rgba(114, 137, 218, 0.5); /* Bright glow effect */
         }
 
         .box:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(114, 137, 218, 0.3);
+            box-shadow: 0 10px 30px rgba(114, 137, 218, 0.6); /* Bright hover effect */
         }
 
         .box h3 {
-            color: #7289da;
+            color: #7289da; /* Lighter shade */
             margin-bottom: 20px;
             font-size: 1.8em;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1); /* Lighter shadow for box titles */
         }
 
         .box ul {
@@ -190,10 +194,12 @@
             transition: background 0.3s ease;
             width: 100%;
             margin-top: 10px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1); /* Brighter button text */
         }
 
         .box button:hover {
             background: #5b6eae;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.6); /* Glow effect on button hover */
         }
 
         /* Footer Section */
@@ -205,16 +211,23 @@
             text-align: center;
             color: white;
             border-top: 1px solid rgba(114, 137, 218, 0.3);
+            text-shadow: 0 0 25px rgba(255, 255, 255, 1); /* Brighter footer text */
         }
 
         footer a {
             color: #7289da;
             text-decoration: none;
             margin: 0 10px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1); /* Brighter text shadow on footer links */
         }
 
         footer a:hover {
             text-decoration: underline;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 1); /* Stronger glow effect on hover */
+        }
+
+        footer p {
+            text-shadow: 0 0 25px rgba(255, 255, 255, 1); /* Brighter text shadow for footer */
         }
 
         /* Pop-up Styles */
@@ -229,7 +242,7 @@
             color: white;
             display: none;
             z-index: 1100;
-            box-shadow: 0 0 20px rgba(114, 137, 218, 0.5);
+            box-shadow: 0 0 30px rgba(114, 137, 218, 0.5);
         }
 
         .popup.active {
@@ -315,7 +328,7 @@
     <div class="popup" id="popup">
         <button class="close" onclick="closePopup()">×</button>
         <h2>About Us</h2>
-        <p>An Exclusive Site Built for Dank Addicts Discord Server and It's Owner, Technocrat's Bot Services <br> This site is built out of boredom and serves no legit purpose. <br> Site built by Technocrat</p>
+        <p>An Exclusive Site Built for Dank Addicts Discord Server and Its Owner, Technocrat's Bot Services <br> This site is built out of boredom and serves no legit purpose. <br> Site built by Technocrat</p>
     </div>
 
     <!-- Footer Section -->
@@ -329,7 +342,7 @@
         <p>&copy; 2025 Dank Addicts®. All Rights Reserved.</p>
 
         <!-- Random Content -->
-        <p> Enjoy our awesome community with a variety of activities like an Active Community, Big Events, Giveaways, Nitro Drops etc!</p>
+        <p>= Enjoy our awesome community with a variety of activities like an Active Community, Big Events, Giveaways, Nitro Drops etc!</p>
     </footer>
 
     <script>
