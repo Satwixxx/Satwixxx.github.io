@@ -136,6 +136,7 @@
             gap: 30px;
             position: relative;
             z-index: 1;
+            margin-top: -100px;  /* Moved the boxes section even further up */
         }
 
         .box {
@@ -216,6 +217,36 @@
             text-decoration: underline;
         }
 
+        /* Pop-up Styles */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            display: none;
+            z-index: 1100;
+            box-shadow: 0 0 20px rgba(114, 137, 218, 0.5);
+        }
+
+        .popup.active {
+            display: block;
+        }
+
+        .popup button.close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .title {
@@ -243,10 +274,10 @@
     
     <nav>
         <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">Contact</a></li>
+            <li><a href="#" id="homeBtn">Home</a></li>
+            <li><a href="#" id="aboutBtn">About</a></li>
+            <li><a href="#boxesSection" id="servicesBtn">Services</a></li>
+            <li><a href="#contactSection" id="contactBtn">Contact</a></li>
         </ul>
     </nav>
 
@@ -254,7 +285,7 @@
         <h1 class="title">Dank Addicts WebPage</h1>
     </div>
 
-    <section class="boxes-section">
+    <section class="boxes-section" id="boxesSection">
         <!-- Discord Server Box -->
         <div class="box">
             <h3>Dank Addicts Discord Server</h3>
@@ -264,7 +295,7 @@
                 <li>Exclusive Events</li>
                 <li>Premium Roles</li>
             </ul>
-            <button>Click to Know More</button>
+            <button onclick="window.location.href='discord.html'">Click to Know More</button>
         </div>
 
         <!-- Custom Bot Services Box -->
@@ -276,19 +307,29 @@
                 <li>Automated Tasks</li>
                 <li>24/7 Support</li>
             </ul>
-            <button>Click to Know More</button>
+            <button onclick="window.location.href='bot.html'">Click to Know More</button>
         </div>
     </section>
 
+    <!-- Popup Section -->
+    <div class="popup" id="popup">
+        <button class="close" onclick="closePopup()">×</button>
+        <h2>About Us</h2>
+        <p>An Exclusive Site Built for Dank Addicts Discord Server and It's Owner, Technocrat's Bot Services <br> This site is built out of boredom and serves no legit purpose. <br> Site built by Technocrat</p>
+    </div>
+
     <!-- Footer Section -->
-    <footer>
-        <p>Contact Us: <a href="mailto:info@dankaddicts.com">info@dankaddicts.com</a></p>
+    <footer id="contactSection">
+        <p>Contact Us: <a href="mailto:satwikmishra77@gmail.com">satwikmishra77@gmail.com</a></p>
         <p>Follow Us: 
-            <a href="#">Discord</a> | 
-            <a href="#">Twitter</a> | 
-            <a href="#">GitHub</a>
+            <a href="https://discord.gg">Discord</a> | 
+            <a href="https://www.instagram.com/satwik.m_/">Instagram</a> | 
+            <a href="https://github.com/Satwixxx">GitHub</a>
         </p>
-        <p>&copy; 2023 Dank Addicts. All Rights Reserved.</p>
+        <p>&copy; 2025 Dank Addicts®. All Rights Reserved.</p>
+
+        <!-- Random Content -->
+        <p>= Enjoy our awesome community with a variety of activities like an Active Community, Big Events, Giveaways, Nitro Drops etc!</p>
     </footer>
 
     <script>
@@ -315,30 +356,31 @@
             }
         }
 
-        // Feature card animation on scroll
-        function checkScroll() {
-            const cards = document.querySelectorAll('.feature-card');
-            cards.forEach(card => {
-                const cardTop = card.getBoundingClientRect().top;
-                if (cardTop < window.innerHeight * 0.8) {
-                    card.classList.add('visible');
-                }
-            });
+        // Popup toggle for the "About" button
+        document.getElementById('aboutBtn').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('popup').classList.toggle('active');
+        });
+
+        // Close popup function
+        function closePopup() {
+            document.getElementById('popup').classList.remove('active');
         }
 
-        // Button click interactions
-        document.querySelectorAll('.box button').forEach(button => {
-            button.addEventListener('click', () => {
-                const boxTitle = button.closest('.box').querySelector('h3').textContent;
-                alert(`You clicked "${boxTitle}". More details coming soon!`);
-            });
+        // Scroll to different sections
+        document.getElementById('servicesBtn').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('boxesSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('contactBtn').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('contactSection').scrollIntoView({ behavior: 'smooth' });
         });
 
         // Initialize
         window.addEventListener('load', () => {
             createBackground();
-            window.addEventListener('scroll', checkScroll);
-            checkScroll(); // Initial check
         });
     </script>
 </body>
