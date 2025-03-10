@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dank Addicts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #121212;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: white;
+        }
+
+        /* Animated Particles / Bokeh Effect */
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(114, 137, 218, 0.2); /* Soft bluish circle */
+            animation: float 5s ease-in-out infinite;
+            opacity: 0.4;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); opacity: 0.4; }
+            50% { transform: translateY(-20px); opacity: 0.7; }
+        }
+
+        /* Nav Styles */
+        nav {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            list-style: none;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #7289da;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 4.5em;
+            background: linear-gradient(45deg, #7289da, #43b581);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(114, 137, 218, 0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Feature Cards Section */
+        .features {
+            padding: 50px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-card {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.6s ease;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            box-shadow: 0 0 20px rgba(114, 137, 218, 0.1);
+        }
+
+        .feature-card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .feature-card h2 {
+            color: #7289da;
+            margin-bottom: 15px;
+        }
+
+        /* Boxes Section */
+        .boxes-section {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .box {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            border: 1px solid rgba(114, 137, 218, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 15px rgba(114, 137, 218, 0.1);
+        }
+
+        .box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(114, 137, 218, 0.3);
+        }
+
+        .box h3 {
+            color: #7289da;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .box ul {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .box ul li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .box ul li::before {
+            content: "•";
+            color: #43b581;
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+        }
+
+        .box button {
+            background: #7289da;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .box button:hover {
+            background: #5b6eae;
+        }
+
+        /* Footer Section */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 30px 20px;
+            margin-top: 50px;
+            text-align: center;
+            color: white;
+            border-top: 1px solid rgba(114, 137, 218, 0.3);
+        }
+
+        footer a {
+            color: #7289da;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 3em;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .features, .boxes-section {
+                grid-template-columns: 1fr;
+            }
+
+            .hero button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background" id="background"></div>
+    
+    <nav>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Services</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="hero">
+        <h1 class="title">Dank Addicts WebPage</h1>
+    </div>
+
+    <section class="boxes-section">
+        <!-- Discord Server Box -->
+        <div class="box">
+            <h3>Dank Addicts Discord Server</h3>
+            <ul>
+                <li>Active Community</li>
+                <li>24/7 Moderation</li>
+                <li>Exclusive Events</li>
+                <li>Premium Roles</li>
+            </ul>
+            <button>Click to Know More</button>
+        </div>
+
+        <!-- Custom Bot Services Box -->
+        <div class="box">
+            <h3>Custom Bot Services</h3>
+            <ul>
+                <li>Custom Commands</li>
+                <li>Advanced Moderation</li>
+                <li>Automated Tasks</li>
+                <li>24/7 Support</li>
+            </ul>
+            <button>Click to Know More</button>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>Contact Us: <a href="mailto:info@dankaddicts.com">info@dankaddicts.com</a></p>
+        <p>Follow Us: 
+            <a href="#">Discord</a> | 
+            <a href="#">Twitter</a> | 
+            <a href="#">GitHub</a>
+        </p>
+        <p>&copy; 2023 Dank Addicts. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Create animated background circles
+        function createBackground() {
+            const background = document.getElementById('background');
+            for (let i = 0; i < 50; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                
+                const size = Math.random() * 50 + 10;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 5;
+                const duration = Math.random() * 3 + 3;
+
+                circle.style.width = `${size}px`;
+                circle.style.height = `${size}px`;
+                circle.style.left = `${left}%`;
+                circle.style.top = `${Math.random() * 100}%`;
+                circle.style.animationDelay = `${delay}s`;
+                circle.style.animationDuration = `${duration}s`;
+
+                background.appendChild(circle);
+            }
+        }
+
+        // Feature card animation on scroll
+        function checkScroll() {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                const cardTop = card.getBoundingClientRect().top;
+                if (cardTop < window.innerHeight * 0.8) {
+                    card.classList.add('visible');
+                }
+            });
+        }
+
+        // Button click interactions
+        document.querySelectorAll('.box button').forEach(button => {
+            button.addEventListener('click', () => {
+                const boxTitle = button.closest('.box').querySelector('h3').textContent;
+                alert(`You clicked "${boxTitle}". More details coming soon!`);
+            });
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createBackground();
+            window.addEventListener('scroll', checkScroll);
+            checkScroll(); // Initial check
+        });
+    </script>
+</body>
+</html>

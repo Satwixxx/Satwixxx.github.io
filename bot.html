@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Bot Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* ===== BACKGROUND WITH SPINNING RECTANGLE ===== */
+        .cyber-bg {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .spinning-rect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            border: 4px solid rgba(255, 0, 255, 0.3);
+            transform: translate(-50%, -50%) rotate(45deg);
+            animation: spin 20s linear infinite;
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.2);
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(45deg); }
+            100% { transform: translate(-50%, -50%) rotate(405deg); }
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 8px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border-radius: 1px;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5),
+                        0 0 25px rgba(0, 255, 255, 0.5);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 50px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .main-title {
+            font-size: 4em;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .service-box {
+            background: rgba(15, 15, 15, 0.9);
+            border: 2px solid rgba(0, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .service-box:hover {
+            transform: translateY(-10px);
+        }
+
+        .service-title {
+            color: #00ffff;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .service-description {
+            color: #ccc;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5em;
+            }
+            
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="cyber-bg">
+        <div class="spinning-rect"></div>
+        <div class="particles" id="particles"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="header">
+            <h1 class="main-title">Custom Bot Service</h1>
+        </div>
+
+        <div class="service-grid">
+            <div class="service-box">
+                <h2 class="service-title">🎫 Ticket Systems</h2>
+                <p class="service-description">
+                    Advanced Ticket System that creates visible to specific roles,
+                    and an organised transcript system to store all your messages.
+                </p>
+            </div>
+
+            <div class="service-box">
+                <h2 class="service-title">🛡️ Moderation Bots</h2>
+                <p class="service-description">
+                    Automated moderation systems with channel lock, unlock,
+                    ban, mute, kick, etc. commands along with leveling and logs system!
+                </p>
+            </div>
+
+            <div class="service-box">
+                <h2 class="service-title">🎉 Giveaway System</h2>
+                <p class="service-description">
+                    Giveaway system with feature such as bypass role,
+                    blacklist, requirement, bonus entires etc.
+                </p>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2 style="color: #ff00ff; margin-bottom: 30px; font-size: 1.8em;">
+                Ready to Get Your Custom Bot?
+            </h2>
+            <a href="#" class="cta-button">Click on me to contact the Developer for a similar bot →</a>
+        </div>
+    </div>
+
+    <script>
+        // Generate particles
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 150;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animation = `
+                float ${5 + Math.random() * 10}s infinite linear
+            `;
+            particlesContainer.appendChild(particle);
+        }
+
+        // Add floating animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translate(0, 0); }
+                25% { transform: translate(${Math.random() * 50}px, ${Math.random() * 50}px); }
+                50% { transform: translate(${Math.random() * -50}px, ${Math.random() * 50}px); }
+                75% { transform: translate(${Math.random() * 50}px, ${Math.random() * -50}px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

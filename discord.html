@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dank Addicts Discord Server</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #0f0f0f; /* Dark background */
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        /* Dynamic Background with Particles */
+        .background {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(0, 255, 255, 0.8); /* Neon cyan color */
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.6);
+            animation: moveParticle 5s infinite ease-in-out;
+        }
+
+        @keyframes moveParticle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            50% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 1;
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+        }
+
+        /* Title Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 5em;
+            background: linear-gradient(45deg, #9b59b6, #00ffcc, #2980b9);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.6), 0 0 30px rgba(0, 255, 255, 0.8);
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            0% {
+                text-shadow: 0 0 20px rgba(0, 255, 255, 0.4), 0 0 30px rgba(0, 255, 255, 0.7);
+            }
+            100% {
+                text-shadow: 0 0 50px rgba(0, 255, 255, 0.8), 0 0 60px rgba(0, 255, 255, 1);
+            }
+        }
+
+        /* Creative Block with Points and Button */
+        .info-block {
+            background: rgba(15, 15, 15, 0.8);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: left;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-block::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, rgba(155, 89, 182, 0.5), rgba(0, 255, 204, 0.5), rgba(41, 128, 185, 0.5)); /* Reduced brightness */
+            z-index: -1;
+            border-radius: 15px;
+            animation: rotateBorder 5s linear infinite;
+        }
+
+        @keyframes rotateBorder {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info-content h2 {
+            font-size: 2.2em;
+            color: #00ffcc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+
+        .info-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-content ul li {
+            font-size: 1.2em;
+            color: #ccc;
+            margin: 15px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .info-content ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #00ffcc;
+            font-size: 1.5em;
+            line-height: 1;
+        }
+
+        /* Join Button Styling */
+        .join-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #9b59b6, #00ffcc);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .join-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+        }
+
+        /* Footer Section */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 30px 20px;
+            margin-top: 50px;
+            text-align: center;
+            color: white;
+            border-top: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        footer a {
+            color: #00ffcc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 3.5em;
+            }
+
+            .info-block {
+                padding: 20px;
+            }
+
+            .info-content h2 {
+                font-size: 1.8em;
+            }
+
+            .info-content ul li {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Background -->
+    <div class="background" id="background"></div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1 class="title">Dank Addicts Discord Server</h1>
+    </div>
+
+    <!-- Creative Block with Points and Button -->
+    <div class="info-block">
+        <div class="info-content">
+            <h2>Why Join Dank Addicts?</h2>
+            <ul>
+                <li>🌟 <strong>Active Community:</strong> Engage with friendly and like-minded people.</li>
+                <li>🎉 <strong>Daily Dank Heists:</strong> We host 200,000,000 DMC worth daily heists.</li>
+                <li>🛡️ <strong>24/7 Moderation:</strong> A safe and welcoming environment for everyone.</li>
+                <li>💎 <strong>Dank Giveaways and Events</strong> We host regular Events and Giveaways.</li>
+                <li>🤖 <strong>Other Bots:</strong> Enjoy fun and utility bots such as Cricket Guru, Karuta, OwO etc. for entertainment and productivity.</li>
+            </ul>
+        </div>
+        <a href="https://discord.gg/dankaddicts" target="_blank" class="join-button">Join The Server Now</a>
+    </div>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>Contact Us: <a href="mailto:info@dankaddicts.com">info@dankaddicts.com</a></p>
+        <p>Follow Us: 
+            <a href="#">Discord</a> | 
+            <a href="#">Twitter</a> | 
+            <a href="#">GitHub</a>
+        </p>
+        <p>&copy; 2023 Dank Addicts. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Function to create a particle
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+
+            // Random starting position
+            const startX = Math.random() * 100; // Random horizontal position
+            const startY = Math.random() * 100; // Random vertical position
+
+            // Random movement distance
+            const tx = (Math.random() - 0.5) * 200; // Random horizontal movement
+            const ty = (Math.random() - 0.5) * 200; // Random vertical movement
+
+            // Set starting position
+            particle.style.left = `${startX}%`;
+            particle.style.top = `${startY}%`;
+
+            // Set animation properties
+            particle.style.setProperty('--tx', `${tx}%`);
+            particle.style.setProperty('--ty', `${ty}%`);
+            particle.style.animationDuration = `${3 + Math.random() * 3}s`;
+
+            // Append the particle
+            document.getElementById('background').appendChild(particle);
+
+            // Remove particle after animation completes
+            setTimeout(() => particle.remove(), 5000);
+        }
+
+        // Create particles continuously
+        setInterval(createParticle, 200); // Faster spawn rate
+
+        // Initial batch of particles
+        for(let i = 0; i < 20; i++) {
+            setTimeout(createParticle, Math.random() * 1000);
+        }
+    </script>
+</body>
+</html>
