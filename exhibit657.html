@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #D3FFF1;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            filter: blur(4px);
+            z-index: 1;
+            opacity: 0.7;
+            animation: floatCloud linear infinite;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 60%;
+            height: 60%;
+            top: -20%;
+            left: 10%;
+        }
+
+        .cloud::after {
+            width: 40%;
+            height: 40%;
+            top: -10%;
+            right: 10%;
+        }
+
+        @keyframes floatCloud {
+            0% { 
+                transform: translateX(var(--start-x)) translateY(var(--start-y));
+                opacity: 0.9;
+            }
+            50% {
+                transform: translateX(var(--middle-x)) translateY(var(--middle-y));
+                opacity: 1;
+            }
+            100% { 
+                transform: translateX(var(--end-x)) translateY(var(--end-y));
+                opacity: 0.9;
+            }
+        }
+
+        .ping-wave {
+            position: absolute;
+            border: 2px solid rgba(255,255,255,0.8);
+            border-radius: 50%;
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        .banana {
+            position: absolute;
+            font-size: 120px;
+            user-select: none;
+            animation: rotateBanana 1s linear infinite;
+            cursor: pointer;
+            z-index: 2;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2));
+        }
+
+        @keyframes rotateBanana {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+        }
+
+        .text-pop {
+            position: absolute;
+            color: #2c3e50;
+            font-weight: 900;
+            pointer-events: none;
+            z-index: 3;
+            animation: textFall 1.5s forwards;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        @keyframes textFall {
+            0% { opacity: 1; transform: translateY(0) rotate(-5deg); }
+            100% { opacity: 0; transform: translateY(120px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="ping-wave" style="top: 50%; left: 50%"></div>
+    <div class="ping-wave" style="top: 50%; left: 50%; animation-delay: 0.5s"></div>
+
+    <div class="banana">🍌</div>
+    <div class="banana">🍌</div>
+
+    <script>
+        // Create randomized clouds with dynamic movement
+        function createCloud() {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            
+            const size = 120 + Math.random() * 80;
+            const verticalPos = Math.random() * 70 + 15;
+            const horizontalSpeed = 15 + Math.random() * 30; // Random horizontal speed
+            const verticalSpeed = 10 + Math.random() * 20;  // Random vertical speed
+            const opacity = Math.random() * 0.3 + 0.7; // Random opacity between 0.7 and 1
+            
+            const randomXStart = Math.random() * 100; // Random starting X position
+            const randomYStart = Math.random() * 50;  // Random starting Y position
+            const randomDirection = Math.random() > 0.5 ? "left" : "right";  // Random movement direction
+
+            // Set cloud size and initial positions
+            const startX = randomDirection === "left" ? -size : window.innerWidth;
+            const endX = randomDirection === "left" ? window.innerWidth : -size;
+            const middleX = (startX + endX) / 2;
+            const startY = randomYStart;
+            const endY = startY + Math.random() * 30;
+
+            // Set animation duration based on speed
+            const duration = horizontalSpeed + verticalSpeed;
+
+            // Set cloud styles dynamically
+            cloud.style.width = `${size}px`;
+            cloud.style.height = `${size / 2}px`;
+            cloud.style.left = `${startX}px`;
+            cloud.style.top = `${startY}%`;
+            cloud.style.opacity = opacity;
+            cloud.style.animationDuration = `${duration}s`;
+            cloud.style.animationTimingFunction = `cubic-bezier(0.4, 0, 0.6, 1)`;
+
+            // Set the cloud's movement animation
+            cloud.style.setProperty('--start-x', startX + 'px');
+            cloud.style.setProperty('--middle-x', middleX + 'px');
+            cloud.style.setProperty('--end-x', endX + 'px');
+            cloud.style.setProperty('--start-y', startY + '%');
+            cloud.style.setProperty('--middle-y', endY + '%');
+            cloud.style.setProperty('--end-y', endY + '%');
+
+            document.body.appendChild(cloud);
+        }
+
+        // Create more clouds (e.g., 15 clouds)
+        for (let i = 0; i < 15; i++) {
+            createCloud();
+        }
+
+        // Banana physics
+        const bananas = document.querySelectorAll('.banana');
+        const speed = 6;
+        
+        bananas.forEach(banana => {
+            const size = 120 + Math.random() * 80;
+            banana.style.fontSize = `${size}px`;
+            banana.x = Math.random() * (window.innerWidth - size);
+            banana.y = Math.random() * (window.innerHeight - size);
+            banana.dx = (Math.random() - 0.5) * speed;
+            banana.dy = (Math.random() - 0.5) * speed;
+            
+            banana.addEventListener('click', (e) => {
+                const text = document.createElement('div');
+                text.className = 'text-pop';
+                text.style.left = `${e.clientX}px`;
+                text.style.top = `${e.clientY}px`;
+                text.textContent = ["Deeznuts", "Sigma", "AVANA", "You're Gay", "Oil Up Lil Bro", "Bitch", "Homosexual", "VVANA "][Math.floor(Math.random() * 5)];
+                text.style.fontSize = `${24 + Math.random() * 24}px`;
+                
+                let velocityY = -12;
+                let velocityX = (Math.random() - 0.5) * 4;
+                
+                function updateText() {
+                    velocityY += 0.7;
+                    text.style.top = `${parseFloat(text.style.top) + velocityY}px`;
+                    text.style.left = `${parseFloat(text.style.left) + velocityX}px`;
+                    
+                    if (parseFloat(text.style.top) < window.innerHeight + 100) {
+                        requestAnimationFrame(updateText);
+                    } else {
+                        text.remove();
+                    }
+                }
+                
+                document.body.appendChild(text);
+                requestAnimationFrame(updateText);
+            });
+        });
+
+        // Banana movement
+        function updateBananas() {
+            bananas.forEach(banana => {
+                const rect = banana.getBoundingClientRect();
+                
+                if (banana.x < 0 || banana.x > window.innerWidth - rect.width) {
+                    banana.dx *= -1;
+                }
+                if (banana.y < 0 || banana.y > window.innerHeight - rect.height) {
+                    banana.dy *= -1;
+                }
+
+                banana.x += banana.dx;
+                banana.y += banana.dy;
+                
+                banana.style.left = `${banana.x}px`;
+                banana.style.top = `${banana.y}px`;
+            });
+
+            requestAnimationFrame(updateBananas);
+        }
+        updateBananas();
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            bananas.forEach(banana => {
+                banana.x = Math.min(banana.x, window.innerWidth - banana.offsetWidth);
+                banana.y = Math.min(banana.y, window.innerHeight - banana.offsetHeight);
+            });
+        });
+    </script>
+</body>
+</html>
