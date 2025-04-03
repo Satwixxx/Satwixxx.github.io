@@ -1,119 +1,141 @@
 const canvas = document.getElementById("gameCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 const scene = new BABYLON.Scene(engine);
-let score = 0;
 
-// Physics
+// 1. Verify WebGL support
+if (!BABYLON.Engine.isSupported()) {
+    alert("WebGL not supported!");
+    throw new Error("WebGL not supported");
+}
+
+// 2. Physics initialization
 scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-// Lighting
-new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+// 3. Lighting adjustments
+const light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+light.intensity = 0.7;
+
 const directionalLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-0.5, -1, -0.5), scene);
-directionalLight.intensity = 0.8;
+directionalLight.intensity = 0.5;
 
-// Camera
-const camera = new BABYLON.FollowCamera("followCam", new BABYLON.Vector3(0, 2, -5), scene);
-camera.radius = 5; // Distance from character
-camera.heightOffset = 2; // Height offset
-camera.rotationOffset = 180; // Angle
+// 4. Camera configuration
+const camera = new BABYLON.FollowCamera("followCam", new BABYLON.Vector3(0, 1.5, -3), scene);
+camera.radius = 4;
+camera.heightOffset = 1.5;
+camera.rotationOffset = 180;
 camera.cameraAcceleration = 0.05;
-camera.maxCameraSpeed = 10;
+camera.maxCameraSpeed = 5;
 
-// Bedroom
+// 5. Simplified bedroom walls (fixed positions)
 const createBedroom = () => {
-    // Floor
-    const floor = BABYLON.MeshBuilder.CreateBox("floor", {width: 10, height: 0.1, depth: 10}, scene);
-    floor.position.y = -0.05;
+    // Floor with visible material
+    const floor = BABYLON.MeshBuilder.CreateGround("floor", {width: 10, height: 10}, scene);
+    const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
+    floorMat.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.85);
+    floor.material = floorMat;
     floor.physicsImpostor = new BABYLON.PhysicsImpostor(floor, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
+
+    // Walls with proper positioning
+    const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+    wallMat.diffuseColor = new BABYLON.Color3(0.95, 0.95, 0.95);
     
-    // Walls
-    const wallMaterial = new BABYLON.StandardMaterial("wallMat", scene);
-    wallMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.8);
-    
-    const walls = [];
-    for(let i = 0; i < 4; i++) {
-        const wall = BABYLON.MeshBuilder.CreateBox(`wall${i}`, {width: 10, height: 4, depth: 0.2}, scene);
-        wall.rotation.y = (Math.PI/2) * i;
-        wall.position = new BABYLON.Vector3(i < 2 ? 5 : -5, 2, i%3 === 0 ? 5 : -5);
-        wall.material = wallMaterial;
+    const createWall = (width, height, position, rotation) => {
+        const wall = BABYLON.MeshBuilder.CreateBox("wall", {width, height, depth: 0.2}, scene);
+        wall.position = position;
+        wall.rotation.y = rotation;
+        wall.material = wallMat;
         wall.physicsImpostor = new BABYLON.PhysicsImpostor(wall, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene);
-    }
+        return wall;
+    };
 
-    // Bed
-    const bed = BABYLON.MeshBuilder.CreateBox("bed", {width: 3, height: 1, depth: 2}, scene);
-    bed.position.set(-3, 0.5, 3);
-    bed.material = new BABYLON.StandardMaterial("bedMat", scene);
-    bed.material.diffuseColor = new BABYLON.Color3(0.4, 0.2, 0.1);
-
-    // Desk
-    const desk = BABYLON.MeshBuilder.CreateBox("desk", {width: 2, height: 1, depth: 1}, scene);
-    desk.position.set(3, 0.5, 3);
-    
-    // Rug
-    const rug = BABYLON.MeshBuilder.CreateCylinder("rug", {diameter: 2, height: 0.1}, scene);
-    rug.position.set(0, 0, 0);
-    rug.material = new BABYLON.StandardMaterial("rugMat", scene);
-    rug.material.diffuseColor = new BABYLON.Color3(0.5, 0.3, 0.2);
+    // Create walls around the floor
+    createWall(10, 4, new BABYLON.Vector3(0, 2, 5), 0);         // Back wall
+    createWall(10, 4, new BABYLON.Vector3(0, 2, -5), 0);        // Front wall
+    createWall(10, 4, new BABYLON.Vector3(5, 2, 0), Math.PI/2); // Right wall
+    createWall(10, 4, new BABYLON.Vector3(-5, 2, 0), Math.PI/2);// Left wall
 };
 
-// Character
+// 6. Improved character
 const createCharacter = () => {
-    // Basic female character
-    const body = BABYLON.MeshBuilder.CreateCylinder("body", {diameterTop: 0.5, diameterBottom: 0.7, height: 1.7}, scene);
-    const head = BABYLON.MeshBuilder.CreateSphere("head", {diameter: 0.5}, scene);
-    head.parent = body;
-    head.position.y = 1;
+    const body = BABYLON.MeshBuilder.CreateCapsule("body", {height: 1.6}, scene);
+    body.position.y = 0.8;
     
-    // Hair
-    const hair = BABYLON.MeshBuilder.CreateSphere("hair", {diameter: 0.55}, scene);
+    // Character appearance
+    const head = BABYLON.MeshBuilder.CreateSphere("head", {diameter: 0.4}, scene);
+    head.parent = body;
+    head.position.y = 0.7;
+    
+    const hair = BABYLON.MeshBuilder.CreateCylinder("hair", {diameterTop: 0.4, diameterBottom: 0.5, height: 0.2}, scene);
     hair.parent = head;
+    hair.position.y = 0.2;
     hair.material = new BABYLON.StandardMaterial("hairMat", scene);
     hair.material.diffuseColor = new BABYLON.Color3(0.3, 0.2, 0.1);
-    
-    // Dress
-    const dress = BABYLON.MeshBuilder.CreateCylinder("dress", {diameterTop: 0.7, diameterBottom: 1, height: 0.8}, scene);
+
+    const dress = BABYLON.MeshBuilder.CreateCylinder("dress", {diameterTop: 0.5, diameterBottom: 0.7, height: 0.7}, scene);
     dress.parent = body;
-    dress.position.y = -0.4;
+    dress.position.y = -0.35;
     dress.material = new BABYLON.StandardMaterial("dressMat", scene);
     dress.material.diffuseColor = new BABYLON.Color3(0.8, 0.2, 0.4);
-    
-    body.position.y = 0.85;
-    body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 1 }, scene);
-    
+
+    body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CapsuleImpostor, { mass: 1 }, scene);
     camera.lockedTarget = body;
     return body;
 };
 
-// Game Setup
-const setupGame = () => {
-    createBedroom();
-    const character = createCharacter();
-    
-    // Movement
+// 7. Movement system
+const setupMovement = (character) => {
     const inputMap = {};
     scene.actionManager = new BABYLON.ActionManager(scene);
-    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, (evt) => {
-        inputMap[evt.sourceEvent.key.toLowerCase()] = true;
-    }));
-    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, (evt) => {
-        inputMap[evt.sourceEvent.key.toLowerCase()] = false;
-    }));
+    
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+        BABYLON.ActionManager.OnKeyDownTrigger,
+        (evt) => inputMap[evt.sourceEvent.key.toLowerCase()] = true
+    ));
+    
+    scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
+        BABYLON.ActionManager.OnKeyUpTrigger,
+        (evt) => inputMap[evt.sourceEvent.key.toLowerCase()] = false
+    ));
 
-    const moveSpeed = 0.1;
     scene.onBeforeRenderObservable.add(() => {
-        const forward = camera.getForwardRay().direction;
-        const right = camera.getRightRay().direction;
-        
-        if(inputMap['w']) character.moveWithCollisions(forward.scale(moveSpeed));
-        if(inputMap['s']) character.moveWithCollisions(forward.scale(-moveSpeed));
-        if(inputMap['a']) character.moveWithCollisions(right.scale(-moveSpeed));
-        if(inputMap['d']) character.moveWithCollisions(right.scale(moveSpeed));
+        const forward = new BABYLON.Vector3(
+            Math.sin(camera.rotation.y),
+            0,
+            Math.cos(camera.rotation.y)
+        );
+        const right = forward.cross(BABYLON.Vector3.Up());
+
+        const speed = 0.1;
+        const moveDirection = new BABYLON.Vector3(0, 0, 0);
+
+        if (inputMap['w']) moveDirection.addInPlace(forward);
+        if (inputMap['s']) moveDirection.addInPlace(forward.scale(-1));
+        if (inputMap['a']) moveDirection.addInPlace(right.scale(-1));
+        if (inputMap['d']) moveDirection.addInPlace(right);
+
+        if (moveDirection.length() > 0) {
+            moveDirection.normalize();
+            character.moveWithCollisions(moveDirection.scale(speed));
+        }
     });
 };
 
-// Run game
-setupGame();
-engine.runRenderLoop(() => scene.render());
+// Initialize game
+const initGame = () => {
+    createBedroom();
+    const character = createCharacter();
+    setupMovement(character);
+    
+    // Initial camera position
+    camera.position = new BABYLON.Vector3(0, 1.5, -3);
+};
 
-// Resize
+initGame();
+
+// Render loop
+engine.runRenderLoop(() => {
+    scene.render();
+});
+
+// Handle window resize
 window.addEventListener("resize", () => engine.resize());
