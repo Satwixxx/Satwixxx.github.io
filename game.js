@@ -1,5 +1,9 @@
 const canvas = document.getElementById("gameCanvas");
 const engine = new BABYLON.Engine(canvas, true);
+
+// Ensure the engine is resized correctly to fit the canvas
+engine.resize();
+
 const scene = new BABYLON.Scene(engine);
 
 // 1. Verify WebGL support
@@ -8,7 +12,7 @@ if (!BABYLON.Engine.isSupported()) {
     throw new Error("WebGL not supported");
 }
 
-// 2. Physics initialization
+// 2. Physics initialization (optional for debugging, comment out for now)
 scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
 // 3. Lighting adjustments
@@ -127,7 +131,7 @@ const initGame = () => {
     setupMovement(character);
     
     // Initial camera position
-    camera.position = new BABYLON.Vector3(0, 1.5, -3);
+    camera.position = new BABYLON.Vector3(0, 5, -10);  // Moved camera for better visibility
 };
 
 initGame();
