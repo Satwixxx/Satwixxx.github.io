@@ -27,6 +27,7 @@ class Game {
 
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         camera.position.set(0, 6, 10);
+        camera.lookAt(0, 3, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -94,7 +95,7 @@ class Game {
             new THREE.SphereGeometry(0.9, 32, 32, 0, Math.PI),
             new THREE.MeshPhongMaterial({ 
                 color: 0xFF1493,
-                stripeTexture: this.createCandyStripeTexture()
+                map: this.createCandyStripeTexture()
             })
         );
         hood.position.set(0, 2.8, 0.3);
@@ -148,6 +149,25 @@ class Game {
         ctx.fillStyle = '#FFFFFF';
         for(let x = 0; x < 256; x += 32) {
             ctx.fillRect(x, 0, 16, 256);
+        }
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    createCandyPatternTexture() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.height = 256;
+        
+        // Candy dots pattern
+        ctx.fillStyle = '#FF69B4';
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.fillStyle = '#FFD700';
+        for(let y = 0; y < 256; y += 32) {
+            for(let x = (y/32 % 2)*32; x < 256; x += 64) {
+                ctx.beginPath();
+                ctx.arc(x + 16, y + 16, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         return new THREE.CanvasTexture(canvas);
     }
@@ -221,7 +241,7 @@ class Game {
     createLegs(group) {
         const legMaterial = new THREE.MeshPhongMaterial({ 
             color: 0x4B0082,
-            stripeTexture: this.createStripeTexture()
+            map: this.createStripeTexture()
         });
         
         const legGeometry = new THREE.CylinderGeometry(0.25, 0.15, 1.5);
@@ -391,7 +411,6 @@ class Game {
             new THREE.BoxGeometry(1.4, 5.8, 0.1),
             new THREE.MeshPhongMaterial({
                 color: 0x7EC0EE,
-                mirror: true,
                 opacity: 0.8,
                 transparent: true
             })
