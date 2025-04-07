@@ -22,6 +22,7 @@ class Game {
 
     init() {
         scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
         clock = new THREE.Clock();
         raycaster = new THREE.Raycaster();
 
@@ -63,7 +64,6 @@ class Game {
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.height = 512;
         
-        // Candy checkered pattern
         ctx.fillStyle = '#FFD700';
         ctx.fillRect(0, 0, 512, 512);
         ctx.fillStyle = '#FF69B4';
@@ -145,7 +145,6 @@ class Game {
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.height = 256;
         
-        // Vertical stripes
         ctx.fillStyle = '#FFFFFF';
         for(let x = 0; x < 256; x += 32) {
             ctx.fillRect(x, 0, 16, 256);
@@ -158,7 +157,6 @@ class Game {
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.height = 256;
         
-        // Candy dots pattern
         ctx.fillStyle = '#FF69B4';
         ctx.fillRect(0, 0, 256, 256);
         ctx.fillStyle = '#FFD700';
@@ -176,7 +174,6 @@ class Game {
         const eyeGeometry = new THREE.SphereGeometry(0.15);
         const eyeMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
         
-        // Main eyes
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
         leftEye.position.set(0.35, 2.65, 0.8);
         head.add(leftEye);
@@ -185,7 +182,6 @@ class Game {
         rightEye.position.set(-0.35, 2.65, 0.8);
         head.add(rightEye);
 
-        // Eye sparkles
         const sparkleGeo = new THREE.SphereGeometry(0.05);
         const sparkleMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         const sparkles = [
@@ -209,18 +205,15 @@ class Game {
     createHair(group) {
         const hairMaterial = new THREE.MeshPhongMaterial({ color: 0x2F1B0A });
         
-        // Pigtails with ribbons
         const createPigtail = (side) => {
             const pigtail = new THREE.Group();
             
-            // Hair strands
             const hair = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.15, 0.15, 1.2, 8),
                 hairMaterial
             );
             hair.rotation.z = side * 0.5;
             
-            // Ribbon
             const ribbon = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 0.1, 0.3),
                 new THREE.MeshPhongMaterial({ color: 0xFF0000 })
@@ -260,7 +253,6 @@ class Game {
         const ctx = canvas.getContext('2d');
         canvas.width = canvas.height = 256;
         
-        // Horizontal stripes
         ctx.fillStyle = '#FFFFFF';
         for(let y = 0; y < 256; y += 32) {
             ctx.fillRect(0, y, 256, 16);
@@ -269,7 +261,6 @@ class Game {
     }
 
     createEnhancedRoom() {
-        // Complete walls with front wall visibility
         const wallMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xFFF3C2,
             transparent: true,
@@ -277,14 +268,13 @@ class Game {
         });
         
         const walls = [
-            this.createWall(20, 8, 0.2, [0, 4, -10]),  // Back
-            this.createWall(0.2, 8, 20, [-10, 4, 0]),  // Left
-            this.createWall(0.2, 8, 20, [10, 4, 0]),   // Right
-            this.createWall(20, 8, 0.2, [0, 4, 10])    // Front
+            this.createWall(20, 8, 0.2, [0, 4, -10]),
+            this.createWall(0.2, 8, 20, [-10, 4, 0]),
+            this.createWall(0.2, 8, 20, [10, 4, 0]),
+            this.createWall(20, 8, 0.2, [0, 4, 15])
         ];
         walls.forEach(wall => scene.add(wall));
 
-        // Full furniture set
         this.createFurnitureCollection();
     }
 
@@ -293,8 +283,8 @@ class Game {
             new THREE.BoxGeometry(w, h, d),
             new THREE.MeshPhongMaterial({ 
                 color: 0xFFF3C2,
-                transparent: true,
-                opacity: pos[2] === 10 ? 0.3 : 1
+                transparent: pos[2] === 15,
+                opacity: pos[2] === 15 ? 0.3 : 1
             })
         );
         wall.position.set(...pos);
@@ -303,31 +293,26 @@ class Game {
     }
 
     createFurnitureCollection() {
-        // Queen bed with canopy
         const bed = this.createCanopyBed();
         bed.position.set(-7, 0, -8);
         scene.add(bed);
         interactiveObjects.push(bed);
 
-        // Gaming desk
         const desk = this.createGamingDesk();
         desk.position.set(6, 0, -8);
         scene.add(desk);
         interactiveObjects.push(desk);
 
-        // Wardrobe with mirror
         const wardrobe = this.createWardrobe();
         wardrobe.position.set(-9, 0, 5);
         scene.add(wardrobe);
         interactiveObjects.push(wardrobe);
 
-        // Bookshelf with goodies
         const bookshelf = this.createBookshelf();
         bookshelf.position.set(8, 0, 5);
         scene.add(bookshelf);
         interactiveObjects.push(bookshelf);
 
-        // Nightstand with lamp
         const nightstand = this.createNightstand();
         nightstand.position.set(-7, 0, 5);
         scene.add(nightstand);
@@ -338,7 +323,6 @@ class Game {
         const bed = new THREE.Group();
         const material = new THREE.MeshPhongMaterial({ color: 0xB6E3D6 });
         
-        // Main frame
         const frame = new THREE.Mesh(
             new THREE.BoxGeometry(5, 1.5, 4),
             material
@@ -346,7 +330,6 @@ class Game {
         frame.castShadow = true;
         bed.add(frame);
 
-        // Canopy posts
         const postGeo = new THREE.CylinderGeometry(0.2, 0.2, 4);
         const posts = [
             new THREE.Mesh(postGeo, material).position.set(-2.3, 2, -1.8),
@@ -356,7 +339,6 @@ class Game {
         ];
         posts.forEach(post => bed.add(post));
 
-        // Canopy fabric
         const canopy = new THREE.Mesh(
             new THREE.BoxGeometry(5.5, 0.1, 4.5),
             new THREE.MeshPhongMaterial({ 
@@ -375,7 +357,6 @@ class Game {
         const desk = new THREE.Group();
         const mainMaterial = new THREE.MeshPhongMaterial({ color: 0x2F4F4F });
         
-        // Curved desktop
         const desktop = new THREE.Mesh(
             new THREE.CylinderGeometry(3, 3, 0.3, 64, 1, true, 0, Math.PI),
             mainMaterial
@@ -384,7 +365,6 @@ class Game {
         desktop.position.y = 1.2;
         desk.add(desktop);
 
-        // Monitor
         const monitor = new THREE.Mesh(
             new THREE.BoxGeometry(2, 1.5, 0.1),
             new THREE.MeshPhongMaterial({ color: 0x1A1A1A })
@@ -399,14 +379,12 @@ class Game {
         const wardrobe = new THREE.Group();
         const material = new THREE.MeshPhongMaterial({ color: 0xD4AF37 });
         
-        // Main body
         const body = new THREE.Mesh(
             new THREE.BoxGeometry(3, 6, 2),
             material
         );
         wardrobe.add(body);
 
-        // Mirror door
         const mirror = new THREE.Mesh(
             new THREE.BoxGeometry(1.4, 5.8, 0.1),
             new THREE.MeshPhongMaterial({
@@ -418,7 +396,6 @@ class Game {
         mirror.position.x = 0.7;
         wardrobe.add(mirror);
 
-        // Regular door
         const door = mirror.clone();
         door.material = material;
         door.position.x = -0.7;
@@ -449,7 +426,6 @@ class Game {
             camera.getWorldDirection(direction);
             direction.y = 0;
 
-            // Smooth acceleration
             if(['w','a','s','d'].includes(e.key.toLowerCase())) {
                 MOVEMENT.currentSpeed = Math.min(
                     MOVEMENT.currentSpeed + MOVEMENT.acceleration,
@@ -474,7 +450,6 @@ class Game {
                     break;
             }
 
-            // Bounce animation
             character.position.y = 1 + Math.abs(Math.sin(performance.now()/150)) * 0.2;
             controls.target.copy(character.position);
         });
