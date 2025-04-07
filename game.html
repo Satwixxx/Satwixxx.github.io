@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D Scene</title>
+    <title>3D Scene with Textures</title>
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
@@ -12,7 +12,23 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js"></script>
     <script>
 // Start of game.js
-let scene, camera, renderer, cube, controls;
+let scene, camera, renderer, controls;
+
+// Texture loader with error handling
+const textureLoader = new THREE.TextureLoader();
+textureLoader.crossOrigin = '';
+
+function loadTexture(path, fallbackColor) {
+    return textureLoader.load(
+        path,
+        undefined,
+        undefined,
+        function(err) {
+            console.error('Error loading texture:', err);
+            return new THREE.MeshPhongMaterial({ color: fallbackColor });
+        }
+    );
+}
 
 function init() {
     // Scene setup
@@ -20,36 +36,70 @@ function init() {
     
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+    camera.position.set(0, 5, 8);
+    camera.lookAt(0, 0, 0);
     
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x87CEEB); // Sky blue background
+    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
     
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(5, 5, 5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 10, 7);
+    directionalLight.castShadow = true;
     scene.add(directionalLight);
-    
-    // Cube
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshPhongMaterial({ 
-        color: 0x00ff00,
-        shininess: 100
-    });
-    cube = new THREE.Mesh(geometry, material);
+
+    // Floor with wood texture
+    const floorTexture = loadTexture('wood_floor.jpg', 0x8B4513); // Fallback to brown
+    const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshPhongMaterial({
+            map: floorTexture,
+            side: THREE.DoubleSide
+        })
+    );
+    floor.rotation.x = -Math.PI/2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Test cube (should be clearly visible)
+    const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+    const cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF0000 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.y = 1;
+    cube.castShadow = true;
     scene.add(cube);
-    
+
+    // Walls
+    const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+    const walls = [
+        { position: [0, 5, -10], size: [20, 10, 0.2] },  // Back wall
+        { position: [-10, 5, 0], size: [0.2, 10, 20] },  // Left wall
+        { position: [10, 5, 0], size: [0.2, 10, 20] }    // Right wall
+    ];
+
+    walls.forEach(wallConfig => {
+        const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(...wallConfig.size),
+            wallMaterial
+        );
+        wall.position.set(...wallConfig.position);
+        wall.receiveShadow = true;
+        scene.add(wall);
+    });
+
     // Controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.minDistance = 5;
+    controls.maxDistance = 20;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    
+
     // Window resize handler
     window.addEventListener('resize', onWindowResize, false);
 }
@@ -62,11 +112,6 @@ function onWindowResize() {
 
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Rotate cube
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-    
     controls.update();
     renderer.render(scene, camera);
 }
