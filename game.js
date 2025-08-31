@@ -7,16 +7,38 @@ let canJump = true;
 let velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const clock = new THREE.Clock();
+let controls;
+let currentAnimation = null;
 
 // Initialize the scene
 function init() {
     scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+    
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
+
+    // Initialize pointer lock controls
+    controls = new THREE.PointerLockControls(camera, document.body);
+
+    const instructions = document.getElementById('instructions');
+
+    instructions.addEventListener('click', function() {
+        controls.lock();
+    });
+
+    controls.addEventListener('lock', function() {
+        instructions.classList.add('hidden');
+    });
+
+    controls.addEventListener('unlock', function() {
+        instructions.classList.remove('hidden');
+    });
 
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -55,50 +77,66 @@ function init() {
 }
 
 function createRoom() {
-    // Floor
+    // Floor with candy-themed texture
     const floorGeometry = new THREE.PlaneGeometry(20, 20);
     const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x808080,
-        roughness: 0.8 
+        color: 0xFF9ECD, // Pink candy color
+        roughness: 0.3,
+        metalness: 0.2
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Walls
+    // Walls with candy-themed colors
     const wallMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xe0e0e0,
-        roughness: 0.5 
+        color: 0x9EE5FF, // Light blue
+        roughness: 0.3,
+        metalness: 0.1
     });
 
     // Back wall
     const backWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
-        wallMaterial
+        wallMaterial.clone()
     );
     backWall.position.z = -10;
     backWall.position.y = 5;
+    backWall.receiveShadow = true;
+    backWall.castShadow = true;
     scene.add(backWall);
 
     // Left wall
     const leftWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
-        wallMaterial
+        new THREE.MeshStandardMaterial({ 
+            color: 0xFFB6C1, // Light pink
+            roughness: 0.3,
+            metalness: 0.1
+        })
     );
     leftWall.position.x = -10;
     leftWall.position.y = 5;
     leftWall.rotation.y = Math.PI / 2;
+    leftWall.receiveShadow = true;
+    leftWall.castShadow = true;
     scene.add(leftWall);
 
     // Right wall
     const rightWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
-        wallMaterial
+        new THREE.MeshStandardMaterial({ 
+            color: 0x98FF98, // Mint green
+            roughness: 0.3,
+            metalness: 0.1
+        })
     );
     rightWall.position.x = 10;
     rightWall.position.y = 5;
     rightWall.rotation.y = -Math.PI / 2;
+    rightWall.receiveShadow = true;
+    rightWall.castShadow = true;
     scene.add(rightWall);
 }
 
@@ -151,23 +189,53 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
-    if (character) {
-        direction.z = Number(moveForward) - Number(moveBackward);
+    if (character && controls.isLocked) {
+        // Get camera direction
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
+        
+        // Calculate movement direction relative to camera
         direction.x = Number(moveRight) - Number(moveLeft);
+        direction.z = Number(moveBackward) - Number(moveForward);
+        direction.y = 0;
         direction.normalize();
 
+        // Adjust movement direction based on camera rotation
+        const moveSpeed = 0.15;
         if (moveForward || moveBackward || moveLeft || moveRight) {
-            character.position.x += direction.x * 0.1;
-            character.position.z += direction.z * 0.1;
+            const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
+            const rotatedDirection = direction.clone();
+            rotatedDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+            
+            character.position.x += rotatedDirection.x * moveSpeed;
+            character.position.z += rotatedDirection.z * moveSpeed;
 
+            // Rotate character to face movement direction
             if (direction.x !== 0 || direction.z !== 0) {
-                const angle = Math.atan2(direction.x, direction.z);
-                character.rotation.y = angle;
+                character.rotation.y = angle + Math.atan2(direction.x, direction.z);
             }
+
+            // Switch to running animation
+            if (mixer && currentAnimation !== 'run') {
+                const runAnimation = mixer.clipAction(mixer._actions[3]._clip);
+                if (currentAnimation) {
+                    const currentAnim = mixer.clipAction(mixer._actions[0]._clip);
+                    currentAnim.crossFadeTo(runAnimation, 0.2, true);
+                }
+                runAnimation.play();
+                currentAnimation = 'run';
+            }
+        } else if (currentAnimation !== 'idle' && mixer) {
+            // Switch back to idle animation
+            const idleAnimation = mixer.clipAction(mixer._actions[0]._clip);
+            const currentAnim = mixer.clipAction(mixer._actions[3]._clip);
+            currentAnim.crossFadeTo(idleAnimation, 0.2, true);
+            idleAnimation.play();
+            currentAnimation = 'idle';
         }
 
         // Apply gravity
-        velocity.y -= 9.8 * delta;
+        velocity.y -= 20 * delta; // Increased gravity for better feel
         character.position.y += velocity.y * delta;
 
         // Ground check
@@ -177,10 +245,9 @@ function updateCharacterPosition() {
             canJump = true;
         }
 
-        // Update camera to follow character
-        camera.position.x = character.position.x;
-        camera.position.z = character.position.z + 5;
-        camera.lookAt(character.position);
+        // Update camera position to follow character
+        const cameraOffset = new THREE.Vector3(0, 2, 5);
+        camera.position.copy(character.position).add(cameraOffset);
     }
 
     if (mixer) {
