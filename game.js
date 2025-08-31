@@ -135,6 +135,14 @@ function init() {
     // Create room
     createRoom();
 
+    // Create a SUPER visible fallback character first (to ensure something is visible)
+    const fallbackGeometry = new THREE.BoxGeometry(1, 2, 1);
+    const fallbackMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff }); // Bright pink
+    const fallbackCharacter = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
+    fallbackCharacter.position.set(0, 1, 0); // Position at center
+    scene.add(fallbackCharacter);
+    console.log("Added bright fallback character for visibility");
+    
     // Create a Vanellope von Schweetz character using primitive shapes
     try {
         // Create a 3D Vanellope character
@@ -395,19 +403,31 @@ function init() {
         rightShoeAccent.position.set(-0.15, 0.08, 0.15);
         character.add(rightShoeAccent);
         
-        // Add character to scene with proper positioning
+        // Add character to scene with proper positioning - MUCH BIGGER for visibility
         character.position.y = 0;
         character.rotation.y = Math.PI; // Face forward
-        character.scale.set(1.2, 1.2, 1.2); // Make character larger for better visibility
+        character.scale.set(2.0, 2.0, 2.0); // Make character MUCH larger for better visibility
         
         // Ensure all meshes cast and receive shadows for better visibility
         character.traverse((node) => {
             if (node.isMesh) {
                 node.castShadow = true;
                 node.receiveShadow = true;
-                // Make materials brighter for better visibility
+                // Make materials MUCH brighter for better visibility
                 if (node.material) {
-                    node.material.emissive = new THREE.Color(0x222222);
+                    // Make materials super bright
+                    node.material.emissive = new THREE.Color(0x444444);
+                    node.material.emissiveIntensity = 0.5;
+                    
+                    // Increase material brightness
+                    if (node.material.color) {
+                        const color = node.material.color.clone();
+                        // Brighten the color
+                        color.r = Math.min(1, color.r * 1.3);
+                        color.g = Math.min(1, color.g * 1.3);
+                        color.b = Math.min(1, color.b * 1.3);
+                        node.material.color = color;
+                    }
                 }
             }
         });
@@ -418,9 +438,25 @@ function init() {
         // Log character creation
         console.log('Simplified Vanellope character created and added to scene:', character);
         
-        // Force an immediate render to check visibility
+        // Force multiple immediate renders to check visibility
         if (renderer) {
+            // Remove the fallback character now that Vanellope is created
+            scene.children.forEach(child => {
+                if (child.isMesh && child.geometry && child.geometry.type === 'BoxGeometry' && 
+                    child.material && child.material.color && 
+                    child.material.color.getHex() === 0xff00ff) {
+                    scene.remove(child);
+                    console.log("Removed fallback character");
+                }
+            });
+            
             renderer.render(scene, camera);
+            
+            // Add a small delay and render again to ensure visibility
+            setTimeout(() => {
+                renderer.render(scene, camera);
+                console.log("Second render completed to ensure visibility");
+            }, 100);
         }
     } catch (e) {
         console.error("Failed to create fallback character", e);
@@ -429,14 +465,31 @@ function init() {
     // Using our custom Vanellope model with simplified animations
     console.log('Using custom Vanellope von Schweetz character model');
     
-    // Add a spotlight directly on the character for better visibility
-    const characterSpotlight = new THREE.SpotLight(0xffffff, 1.5);
-    characterSpotlight.position.set(0, 5, 3);
-    characterSpotlight.target = character;
-    characterSpotlight.angle = Math.PI/6;
-    characterSpotlight.penumbra = 0.2;
-    characterSpotlight.castShadow = true;
-    scene.add(characterSpotlight);
+    // Add multiple spotlights directly on the character for maximum visibility
+    const characterSpotlight1 = new THREE.SpotLight(0xffffff, 2.0);
+    characterSpotlight1.position.set(0, 5, 3);
+    characterSpotlight1.target = character;
+    characterSpotlight1.angle = Math.PI/4;  // Wider angle
+    characterSpotlight1.penumbra = 0.2;
+    characterSpotlight1.castShadow = true;
+    characterSpotlight1.distance = 20;  // Longer reach
+    scene.add(characterSpotlight1);
+    
+    // Add a second spotlight from another angle
+    const characterSpotlight2 = new THREE.SpotLight(0xffffaa, 1.5);  // Slightly warm light
+    characterSpotlight2.position.set(3, 4, -2);  // From side/back
+    characterSpotlight2.target = character;
+    characterSpotlight2.angle = Math.PI/4;
+    characterSpotlight2.penumbra = 0.2;
+    characterSpotlight2.castShadow = true;
+    scene.add(characterSpotlight2);
+    
+    // Add very bright point light directly on character
+    const characterPointLight = new THREE.PointLight(0xffffff, 2.0);
+    characterPointLight.position.set(0, 1.5, 0);  // Right in the middle of the character
+    characterPointLight.distance = 3;  // Short distance - just to light up the character
+    characterPointLight.decay = 1;  // Slower decay
+    scene.add(characterPointLight);
     
     // Hide loading indicator since we're using our custom model
     const loadingDiv = document.getElementById('loading');
@@ -447,16 +500,29 @@ function init() {
         }, 2000);
     }
 
-    // Position camera closer to character for better visibility
-    camera.position.set(0, 3, 4); // Higher up and closer
-    camera.lookAt(0, 1.5, 0); // Look more directly at character's head
+    // Position camera even closer and at a better angle for character visibility
+    camera.position.set(0, 2, 3); // Closer to character
+    camera.lookAt(0, 1, 0); // Look directly at character
+    cameraHeight = 2;
     
-    // Set character in a well-lit position
+    // Set character in a well-lit position and make sure it's visible
     character.position.set(0, 0, 0);
     
-    // Force a render to make sure character is visible immediately
+    // Force multiple renders to ensure character is displayed
     renderer.render(scene, camera);
+    
+    // Add debug info
     console.log("Camera positioned to view character:", camera.position);
+    console.log("Character position:", character.position);
+    console.log("Character rotation:", character.rotation);
+    
+    // Display character position in debug element
+    const debugDiv = document.getElementById('debug');
+    if (debugDiv) {
+        debugDiv.innerHTML = 'Character should be visible at position (0,0,0)';
+        debugDiv.style.fontSize = '16px';
+        debugDiv.style.padding = '10px';
+    }
 
     // Event listeners for controls
     document.addEventListener('keydown', onKeyDown);
@@ -799,16 +865,28 @@ function updateCharacterPosition() {
                 }
             }
         }
-        // Update camera position based on character and mouse movement
-        const cameraDistance = 5;
+        // Update camera position based on character and mouse movement - closer camera
+        const cameraDistance = 3.5; // Closer camera
         camera.position.x = character.position.x - Math.sin(cameraAngle) * cameraDistance;
         camera.position.z = character.position.z - Math.cos(cameraAngle) * cameraDistance;
         camera.position.y = character.position.y + cameraHeight;
         camera.lookAt(
             character.position.x,
-            character.position.y + 1.5,
+            character.position.y + 1.0, // Look directly at character's center
             character.position.z
         );
+        
+        // Keep checking if character is visible
+        if (!window.characterVisibilityChecked && Date.now() > 5000) {
+            console.log("Character visibility check:", {
+                "Position": character.position,
+                "Is in scene": scene.children.includes(character),
+                "Scale": character.scale,
+                "Camera position": camera.position,
+                "Camera target": new THREE.Vector3(character.position.x, character.position.y + 1.0, character.position.z)
+            });
+            window.characterVisibilityChecked = true;
+        }
     }
     if (mixer) {
         mixer.update(delta);
@@ -820,11 +898,24 @@ function animate() {
     requestAnimationFrame(animate);
     try {
         updateCharacterPosition();
+        
+        // Every 60 frames (about 1 second), check if character is still visible
+        if (frameCount % 60 === 0) {
+            // Log character position
+            if (character) {
+                console.log("Character position:", character.position);
+            }
+        }
+        
         renderer.render(scene, camera);
+        frameCount++;
     } catch (e) {
         console.error("Error in animation loop:", e);
     }
 }
+
+// Add frame counter
+let frameCount = 0;
 
 // Make sure Three.js is properly loaded before initializing
 if (typeof THREE === 'undefined') {
