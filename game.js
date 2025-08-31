@@ -36,24 +36,35 @@ let cameraHeight = 2;
 let mouseSensitivity = 0.002;
 
 function init() {
+    // Create scene with simple background
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xFFB6E6); // Cotton candy pink background
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     
+    // Set up camera with reasonable parameters
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 5);
+    camera.lookAt(0, 1, 0);
     
+    // Configure renderer with simpler settings to avoid compatibility issues
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    // Fix for potential errors in some browsers
-    if (renderer.outputEncoding !== undefined) {
-        renderer.outputEncoding = THREE.sRGBEncoding;
+    
+    // Simple renderer configuration without advanced features that might cause problems
+    try {
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    } catch (e) {
+        console.warn("Error setting shadow map type", e);
     }
-    if (renderer.toneMapping !== undefined) {
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
-    }
+    
     document.body.appendChild(renderer.domElement);
+    
+    // Check if renderer was successfully created
+    if (!renderer.domElement) {
+        console.error("Failed to create renderer");
+        alert("Failed to initialize 3D renderer. Please check your browser compatibility.");
+        return;
+    }
 
     document.addEventListener('mousemove', (event) => {
         if (document.pointerLockElement === renderer.domElement) {
@@ -69,37 +80,71 @@ function init() {
 
     document.addEventListener('pointerlockchange', function() {
         if (document.pointerLockElement === renderer.domElement) {
-            instructions.classList.add('hidden');
+            if (instructions) instructions.classList.add('hidden');
         } else {
-            instructions.classList.remove('hidden');
+            if (instructions) instructions.classList.remove('hidden');
         }
     });
+    
+    // Add error handling for instructions element
+    if (!instructions) {
+        console.warn("Instructions element not found, creating one");
+        const newInstructions = document.createElement('div');
+        newInstructions.id = 'instructions';
+        newInstructions.innerHTML = 'Click to play<br>WASD = Move<br>SPACE = Jump<br>MOUSE = Look around<br>ESC = Pause';
+        newInstructions.style.position = 'absolute';
+        newInstructions.style.top = '50%';
+        newInstructions.style.left = '50%';
+        newInstructions.style.transform = 'translate(-50%, -50%)';
+        newInstructions.style.textAlign = 'center';
+        newInstructions.style.color = 'white';
+        newInstructions.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        newInstructions.style.padding = '20px';
+        newInstructions.style.borderRadius = '10px';
+        newInstructions.style.fontFamily = 'Arial, sans-serif';
+        document.body.appendChild(newInstructions);
+        
+        newInstructions.addEventListener('click', function() {
+            renderer.domElement.requestPointerLock();
+        });
+    }
 
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Add strong lighting to ensure visibility
+    // Ambient light ensures everything is at least somewhat visible
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Brighter ambient
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 5, 5);
+    // Main directional light (like the sun)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Full intensity
+    directionalLight.position.set(5, 10, 5);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
+    
+    // Additional light to ensure character is well-lit
+    const pointLight = new THREE.PointLight(0xffffff, 0.8);
+    pointLight.position.set(0, 5, 2);
+    scene.add(pointLight);
 
     // Create room
     createRoom();
 
-    // Create a fallback character first so we always have something visible
-    const geometryFallback = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
-    const materialFallback = new THREE.MeshStandardMaterial({ color: 0xff69b4 }); // Pink color
-    character = new THREE.Mesh(geometryFallback, materialFallback);
-    character.position.y = 0.75;
-    character.castShadow = true;
-    character.receiveShadow = true;
-    scene.add(character);
-    console.log('Initial fallback character created');
+    // Create a simple visible box character as fallback
+    try {
+        const geometryFallback = new THREE.BoxGeometry(1, 2, 1); // Simple box
+        const materialFallback = new THREE.MeshStandardMaterial({ color: 0xff00ff }); // Bright magenta
+        character = new THREE.Mesh(geometryFallback, materialFallback);
+        character.position.y = 1; // Lift it above the ground
+        character.castShadow = true;
+        character.receiveShadow = true;
+        scene.add(character);
+        console.log('Initial fallback character created');
+    } catch (e) {
+        console.error("Failed to create fallback character", e);
+    }
     
-    // Try to load the animated girl model
+    // Try to load a simpler model for better compatibility
     const loader = new THREE.GLTFLoader();
-    loader.load('https://models.readyplayer.me/64f3886ce4bc2a273828cd23.glb', (gltf) => {
+    loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoxAnimated/glTF/BoxAnimated.gltf', (gltf) => {
         // Remove the fallback character
         scene.remove(character);
         
@@ -286,6 +331,14 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
+    // Print debug info to help troubleshoot
+    if (scene && camera && renderer && !window.debugInfoPrinted) {
+        console.log("Debug - Scene:", scene);
+        console.log("Debug - Camera:", camera.position);
+        console.log("Debug - Character:", character ? character.position : "not created");
+        window.debugInfoPrinted = true;
+    }
+    
     if (character) {
         // Calculate movement direction based on camera angle
         direction.z = Number(moveForward) - Number(moveBackward);
@@ -358,9 +411,27 @@ function updateCharacterPosition() {
 
 function animate() {
     requestAnimationFrame(animate);
-    updateCharacterPosition();
-    renderer.render(scene, camera);
+    try {
+        updateCharacterPosition();
+        renderer.render(scene, camera);
+    } catch (e) {
+        console.error("Error in animation loop:", e);
+    }
 }
 
-init();
-animate();
+// Make sure Three.js is properly loaded before initializing
+if (typeof THREE === 'undefined') {
+    console.error("THREE is not defined. Make sure Three.js is properly loaded.");
+    alert("Three.js library not loaded correctly. Please check your internet connection and try reloading the page.");
+} else {
+    try {
+        init();
+        // Force a render to ensure something is visible
+        renderer.render(scene, camera);
+        animate();
+        console.log("Animation started successfully");
+    } catch (e) {
+        console.error("Error during initialization:", e);
+        alert("There was an error initializing the 3D scene. Check console for details.");
+    }
+}
