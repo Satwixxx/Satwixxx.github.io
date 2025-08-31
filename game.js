@@ -74,34 +74,34 @@ function init() {
     // Create room
     createRoom();
 
-    // Load character model (using a stylized character model that looks more like Vanellope)
+    // Load character model (using a more cartoon-style character)
     const loader = new THREE.GLTFLoader();
-    loader.load('https://models.readyplayer.me/647fa3df2857489b2c3816c1.glb', (gltf) => {
+    loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf', (gltf) => {
         character = gltf.scene;
-        character.scale.set(0.8, 0.8, 0.8);
-        character.position.y = 0;
+        character.scale.set(0.5, 0.5, 0.5);
+        character.position.y = 0.5;
         
         // Apply cartoon shader to character
         character.traverse((node) => {
             if (node.isMesh) {
-                node.material = new THREE.MeshToonMaterial({
-                    map: node.material.map,
+                const material = new THREE.MeshToonMaterial({
+                    color: 0xFFD700, // Golden yellow color
                     gradientMap: createGradientTexture(),
-                    color: node.material.color
+                    emissive: 0x666666,
+                    specular: 0xffffff,
+                    shininess: 30
                 });
+                node.material = material;
                 node.castShadow = true;
                 node.receiveShadow = true;
             }
         });
         
         scene.add(character);
-
-        mixer = new THREE.AnimationMixer(character);
-        const animations = gltf.animations;
-        if (animations && animations.length > 0) {
-            const idleAnimation = mixer.clipAction(animations[0]);
-            idleAnimation.play();
-        }
+        
+        // Set initial camera position relative to character
+        camera.position.set(character.position.x, character.position.y + 3, character.position.z + 5);
+        camera.lookAt(character.position);
     });
 
     camera.position.set(0, 2, 5);
@@ -249,68 +249,80 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
-    if (character) {
-        // Get movement direction
-        direction.x = Number(moveRight) - Number(moveLeft);
-        direction.z = Number(moveBackward) - Number(moveForward);
-        direction.y = 0;
+    if (character && controls.isLocked) {
+        // Get camera direction
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
         
-        if (direction.length() > 0) {
-            direction.normalize();
-        }
+        // Calculate movement direction relative to camera
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveLeft) - Number(moveRight);
+        direction.y = 0;
+        direction.normalize();
 
-        // Adjust movement speed and direction
-        const moveSpeed = 0.2;
+        // Move relative to camera direction
+        const moveSpeed = 0.15;
         if (moveForward || moveBackward || moveLeft || moveRight) {
+            // Calculate movement based on camera direction
             const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
-            const rotatedDirection = direction.clone();
-            rotatedDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+            const movementVector = new THREE.Vector3();
             
-            character.position.x += rotatedDirection.x * moveSpeed;
-            character.position.z += rotatedDirection.z * moveSpeed;
+            // Forward/backward movement
+            movementVector.z = direction.z * Math.cos(angle) + direction.x * Math.sin(angle);
+            movementVector.x = direction.z * Math.sin(angle) - direction.x * Math.cos(angle);
+            
+            character.position.x += movementVector.x * moveSpeed;
+            character.position.z += movementVector.z * moveSpeed;
 
             // Rotate character to face movement direction
-            if (direction.x !== 0 || direction.z !== 0) {
-                character.rotation.y = angle + Math.atan2(direction.x, direction.z);
+            if (movementVector.length() > 0) {
+                const targetAngle = Math.atan2(movementVector.x, movementVector.z);
+                character.rotation.y = targetAngle;
             }
 
-            // Switch to running animation
-            if (mixer && currentAnimation !== 'run') {
-                const runAnimation = mixer.clipAction(mixer._actions[3]._clip);
-                if (currentAnimation) {
-                    const currentAnim = mixer.clipAction(mixer._actions[0]._clip);
-                    currentAnim.crossFadeTo(runAnimation, 0.2, true);
-                }
-                runAnimation.play();
-                currentAnimation = 'run';
-            }
-        } else if (currentAnimation !== 'idle' && mixer) {
-            // Switch back to idle animation
-            const idleAnimation = mixer.clipAction(mixer._actions[0]._clip);
-            const currentAnim = mixer.clipAction(mixer._actions[3]._clip);
-            currentAnim.crossFadeTo(idleAnimation, 0.2, true);
-            idleAnimation.play();
-            currentAnimation = 'idle';
+            // Add a slight bob animation while moving
+            character.position.y = 0.5 + Math.sin(Date.now() * 0.01) * 0.05;
         }
 
         // Apply gravity
-        velocity.y -= 20 * delta; // Increased gravity for better feel
+        velocity.y -= 30 * delta;
         character.position.y += velocity.y * delta;
 
-        // Ground check
-        if (character.position.y < 0) {
+        // Ground check with minimum height
+        if (character.position.y < 0.5) {
             velocity.y = 0;
-            character.position.y = 0;
+            character.position.y = 0.5;
             canJump = true;
         }
 
-        // Update camera position to follow character
-        const cameraOffset = new THREE.Vector3(0, 2, 5);
-        camera.position.copy(character.position).add(cameraOffset);
+        // Smooth camera follow
+        const idealOffset = new THREE.Vector3(
+            -Math.sin(character.rotation.y) * 4,
+            3,
+            -Math.cos(character.rotation.y) * 4
+        );
+        
+        const idealLookat = new THREE.Vector3(
+            character.position.x,
+            character.position.y + 1,
+            character.position.z
+        );
+
+        // Smoothly interpolate camera position
+        const currentPosition = camera.position;
+        const smoothSpeed = 0.1;
+        
+        camera.position.x = character.position.x + idealOffset.x;
+        camera.position.y = character.position.y + idealOffset.y;
+        camera.position.z = character.position.z + idealOffset.z;
+        
+        // Make camera look at character
+        camera.lookAt(idealLookat);
     }
 
-    if (mixer) {
-        mixer.update(delta);
+    // Add a gentle floating rotation when idle
+    if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
+        character.rotation.y += delta * 0.5;
     }
 }
 
