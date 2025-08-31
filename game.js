@@ -82,46 +82,32 @@ function init() {
     // Create room
     createRoom();
 
-    // Load animated girl character model
+    // Load a visible, animated, cute girl character model (ReadyPlayerMe demo)
     const loader = new THREE.GLTFLoader();
-    loader.load('https://models.readyplayer.me/64e729b54e4fde3c9367a3f5.glb', (gltf) => {
+    loader.load('https://models.readyplayer.me/64e72a2e4e4fde3c9367a3f7.glb', (gltf) => {
         character = gltf.scene;
-        character.scale.set(1, 1, 1);
+        character.scale.set(1.2, 1.2, 1.2); // Slightly larger for visibility
         character.position.y = 0;
-        
-        // Apply materials and setup character
         character.traverse((node) => {
             if (node.isMesh) {
                 node.castShadow = true;
                 node.receiveShadow = true;
-                // Preserve original materials for better appearance
-                if (node.material) {
-                    node.material.needsUpdate = true;
-                }
+                if (node.material) node.material.needsUpdate = true;
             }
         });
-        
         scene.add(character);
-        
+
         // Setup character animations
         mixer = new THREE.AnimationMixer(character);
         const animations = gltf.animations;
-        
         if (animations && animations.length > 0) {
-            // Store animations for different states
+            // Try to find best matches for idle, walk, run
             const idleAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('idle')) || animations[0]);
             const walkAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('walk')) || animations[1]);
             const runAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('run')) || animations[2]);
-            
-            idleAnim.play(); // Start with idle animation
+            idleAnim.play();
             currentAnimation = 'idle';
-            
-            // Store animations for later use
-            character.animations = {
-                idle: idleAnim,
-                walk: walkAnim,
-                run: runAnim
-            };
+            character.animations = { idle: idleAnim, walk: walkAnim, run: runAnim };
         }
     });
 
@@ -275,75 +261,58 @@ function updateCharacterPosition() {
         direction.z = Number(moveForward) - Number(moveBackward);
         direction.x = Number(moveLeft) - Number(moveRight);
         direction.y = 0;
-        
+        let isMoving = false;
         if (direction.length() > 0) {
             direction.normalize();
-            
+            isMoving = true;
             // Calculate movement based on camera angle
-            const moveSpeed = 0.1;
+            const moveSpeed = 0.12;
             const moveVector = new THREE.Vector3();
-            
             moveVector.x = direction.x * Math.cos(cameraAngle) + direction.z * Math.sin(cameraAngle);
             moveVector.z = direction.z * Math.cos(cameraAngle) - direction.x * Math.sin(cameraAngle);
-            
             // Apply movement
             character.position.x += moveVector.x * moveSpeed;
             character.position.z += moveVector.z * moveSpeed;
-            
             // Rotate character to face movement direction
             const targetAngle = Math.atan2(moveVector.x, moveVector.z);
             character.rotation.y = targetAngle;
-
-            // Handle animations
-            if (character.animations) {
-                if (currentAnimation !== 'run') {
-                    const runAnim = character.animations.run;
-                    if (currentAnimation) {
-                        const currentAnim = character.animations[currentAnimation];
-                        currentAnim.crossFadeTo(runAnim, 0.2, true);
-                    }
-                    runAnim.play();
-                    currentAnimation = 'run';
-                }
-            }
-        } else if (currentAnimation !== 'idle' && character.animations) {
-            // Switch to idle animation
-            const idleAnim = character.animations.idle;
-            if (currentAnimation) {
-                const currentAnim = character.animations[currentAnimation];
-                currentAnim.crossFadeTo(idleAnim, 0.2, true);
-            }
-            idleAnim.play();
-            currentAnimation = 'idle';
         }
-
+        // Animation blending
+        if (character.animations) {
+            if (isMoving && currentAnimation !== 'walk' && character.animations.walk) {
+                const walkAnim = character.animations.walk;
+                const currentAnim = character.animations[currentAnimation];
+                if (currentAnim && walkAnim) currentAnim.crossFadeTo(walkAnim, 0.2, true);
+                walkAnim.play();
+                currentAnimation = 'walk';
+            } else if (!isMoving && currentAnimation !== 'idle' && character.animations.idle) {
+                const idleAnim = character.animations.idle;
+                const currentAnim = character.animations[currentAnimation];
+                if (currentAnim && idleAnim) currentAnim.crossFadeTo(idleAnim, 0.2, true);
+                idleAnim.play();
+                currentAnimation = 'idle';
+            }
+        }
         // Apply gravity and jumping
         velocity.y -= 20 * delta;
         character.position.y += velocity.y * delta;
-
         if (character.position.y < 0) {
             velocity.y = 0;
             character.position.y = 0;
             canJump = true;
         }
-
         // Update camera position based on character and mouse movement
         const cameraDistance = 5;
         const cameraHeight = 2;
-        
-        // Calculate camera position
         camera.position.x = character.position.x - Math.sin(cameraAngle) * cameraDistance;
         camera.position.z = character.position.z - Math.cos(cameraAngle) * cameraDistance;
         camera.position.y = character.position.y + cameraHeight;
-        
-        // Make camera look at character's head level
         camera.lookAt(
             character.position.x,
             character.position.y + 1.5,
             character.position.z
         );
     }
-
     if (mixer) {
         mixer.update(delta);
     }
