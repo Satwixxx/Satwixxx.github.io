@@ -96,6 +96,7 @@ function init() {
             }
         });
         scene.add(character);
+        console.log('Character model loaded successfully');
 
         // Setup character animations
         mixer = new THREE.AnimationMixer(character);
@@ -109,6 +110,17 @@ function init() {
             currentAnimation = 'idle';
             character.animations = { idle: idleAnim, walk: walkAnim, run: runAnim };
         }
+    }, undefined, (error) => {
+        console.error('Error loading character model:', error);
+        // Fallback: create a simple visible character
+        const geometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff69b4 });
+        character = new THREE.Mesh(geometry, material);
+        character.position.y = 0.75;
+        character.castShadow = true;
+        character.receiveShadow = true;
+        scene.add(character);
+        console.log('Fallback character created');
     });
 
     camera.position.set(0, 2, 5);
