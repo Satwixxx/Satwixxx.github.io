@@ -45,21 +45,29 @@ function init() {
     renderer.toneMappingExposure = 1.2;
     document.body.appendChild(renderer.domElement);
 
-    // Initialize pointer lock controls
-    controls = new THREE.PointerLockControls(camera, renderer.domElement);
+    // Initialize variables for camera control
+    let cameraAngle = 0;
+    let cameraHeight = 2;
+    let mouseSensitivity = 0.002;
+
+    document.addEventListener('mousemove', (event) => {
+        if (document.pointerLockElement === renderer.domElement) {
+            cameraAngle -= event.movementX * mouseSensitivity;
+        }
+    });
 
     const instructions = document.getElementById('instructions');
 
     instructions.addEventListener('click', function() {
-        controls.lock();
+        renderer.domElement.requestPointerLock();
     });
 
-    controls.addEventListener('lock', function() {
-        instructions.classList.add('hidden');
-    });
-
-    controls.addEventListener('unlock', function() {
-        instructions.classList.remove('hidden');
+    document.addEventListener('pointerlockchange', function() {
+        if (document.pointerLockElement === renderer.domElement) {
+            instructions.classList.add('hidden');
+        } else {
+            instructions.classList.remove('hidden');
+        }
     });
 
     // Add lights
@@ -74,34 +82,47 @@ function init() {
     // Create room
     createRoom();
 
-    // Load character model (using a more cartoon-style character)
+    // Load animated girl character model
     const loader = new THREE.GLTFLoader();
-    loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf', (gltf) => {
+    loader.load('https://models.readyplayer.me/64e729b54e4fde3c9367a3f5.glb', (gltf) => {
         character = gltf.scene;
-        character.scale.set(0.5, 0.5, 0.5);
-        character.position.y = 0.5;
+        character.scale.set(1, 1, 1);
+        character.position.y = 0;
         
-        // Apply cartoon shader to character
+        // Apply materials and setup character
         character.traverse((node) => {
             if (node.isMesh) {
-                const material = new THREE.MeshToonMaterial({
-                    color: 0xFFD700, // Golden yellow color
-                    gradientMap: createGradientTexture(),
-                    emissive: 0x666666,
-                    specular: 0xffffff,
-                    shininess: 30
-                });
-                node.material = material;
                 node.castShadow = true;
                 node.receiveShadow = true;
+                // Preserve original materials for better appearance
+                if (node.material) {
+                    node.material.needsUpdate = true;
+                }
             }
         });
         
         scene.add(character);
         
-        // Set initial camera position relative to character
-        camera.position.set(character.position.x, character.position.y + 3, character.position.z + 5);
-        camera.lookAt(character.position);
+        // Setup character animations
+        mixer = new THREE.AnimationMixer(character);
+        const animations = gltf.animations;
+        
+        if (animations && animations.length > 0) {
+            // Store animations for different states
+            const idleAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('idle')) || animations[0]);
+            const walkAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('walk')) || animations[1]);
+            const runAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('run')) || animations[2]);
+            
+            idleAnim.play(); // Start with idle animation
+            currentAnimation = 'idle';
+            
+            // Store animations for later use
+            character.animations = {
+                idle: idleAnim,
+                walk: walkAnim,
+                run: runAnim
+            };
+        }
     });
 
     camera.position.set(0, 2, 5);
@@ -114,90 +135,90 @@ function init() {
 }
 
 function createRoom() {
-    // Create candy-themed decorative elements
-    const createCandy = (x, y, z, color) => {
-        const candy = new THREE.Mesh(
-            new THREE.SphereGeometry(0.5, 8, 8),
-            new THREE.MeshToonMaterial({ color: color })
-        );
-        candy.position.set(x, y, z);
-        candy.castShadow = true;
-        scene.add(candy);
-    };
-
-    // Floor with candy pattern
-    const floorGeometry = new THREE.PlaneGeometry(20, 20, 20, 20);
-    const vertices = floorGeometry.attributes.position.array;
-    for (let i = 0; i < vertices.length; i += 3) {
-        vertices[i + 1] = Math.sin(vertices[i] * 0.5) * Math.cos(vertices[i + 2] * 0.5) * 0.2;
-    }
+    // Create realistic wood floor
+    const floorGeometry = new THREE.BoxGeometry(20, 0.2, 20);
+    const floorTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/hardwood2_diffuse.jpg');
+    floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(4, 4);
     
-    const floorMaterial = new THREE.MeshToonMaterial({ 
-        color: 0xFF70A6, // Bright candy pink
-        gradientMap: createGradientTexture()
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+        map: floorTexture,
+        roughness: 0.8,
+        metalness: 0.2
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.1; // Slightly below 0 to avoid z-fighting
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Walls with cartoon style
-    const wallMaterial = new THREE.MeshToonMaterial({ 
-        color: 0x9EE5FF,
-        gradientMap: createGradientTexture()
+    // Create realistic walls
+    const wallGeometry = new THREE.BoxGeometry(0.3, 10, 20);
+    const wallTexture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/brick_diffuse.jpg');
+    wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+    wallTexture.repeat.set(2, 4);
+
+    const wallMaterial = new THREE.MeshStandardMaterial({
+        map: wallTexture,
+        roughness: 0.7,
+        metalness: 0.1
     });
 
-    // Back wall with candy decorations
+    // Back wall
     const backWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 10),
+        new THREE.BoxGeometry(20, 10, 0.3),
         wallMaterial.clone()
     );
     backWall.position.z = -10;
     backWall.position.y = 5;
+    backWall.castShadow = true;
     backWall.receiveShadow = true;
     scene.add(backWall);
 
-    // Add lollipop decorations to back wall
-    for(let i = -8; i <= 8; i += 4) {
-        createCandy(i, 8, -9.8, 0xFF4D4D);
-    }
-
-    // Left wall with candy stripes
+    // Left wall
     const leftWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 10),
-        new THREE.MeshToonMaterial({ 
-            color: 0xFFB6E6,
-            gradientMap: createGradientTexture()
-        })
+        wallGeometry,
+        wallMaterial.clone()
     );
     leftWall.position.x = -10;
     leftWall.position.y = 5;
-    leftWall.rotation.y = Math.PI / 2;
+    leftWall.castShadow = true;
     leftWall.receiveShadow = true;
     scene.add(leftWall);
 
-    // Right wall with candy decorations
+    // Right wall
     const rightWall = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 10),
-        new THREE.MeshToonMaterial({ 
-            color: 0xA5FFD6,
-            gradientMap: createGradientTexture()
-        })
+        wallGeometry,
+        wallMaterial.clone()
     );
     rightWall.position.x = 10;
     rightWall.position.y = 5;
-    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.castShadow = true;
     rightWall.receiveShadow = true;
     scene.add(rightWall);
 
-    // Add floating candy decorations
-    for(let i = 0; i < 20; i++) {
-        const x = Math.random() * 16 - 8;
-        const y = Math.random() * 6 + 2;
-        const z = Math.random() * 16 - 8;
-        const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.6);
-        createCandy(x, y, z, color);
-    }
+    // Add some furniture and decorations
+    // Window
+    const windowFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 6, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+    );
+    windowFrame.position.set(0, 5, -9.8);
+    scene.add(windowFrame);
+
+    // Window glass
+    const windowGlass = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.6, 5.6),
+        new THREE.MeshPhysicalMaterial({
+            color: 0xaaaaff,
+            transparent: true,
+            opacity: 0.3,
+            metalness: 1,
+            roughness: 0,
+            envMapIntensity: 1
+        })
+    );
+    windowGlass.position.set(0, 5, -9.6);
+    scene.add(windowGlass);
 }
 
 function onKeyDown(event) {
@@ -249,82 +270,85 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
-    if (character && controls.isLocked) {
-        // Get camera direction
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-        
-        // Calculate movement direction relative to camera
+    if (character && document.pointerLockElement === renderer.domElement) {
+        // Calculate movement direction based on camera angle
         direction.z = Number(moveForward) - Number(moveBackward);
         direction.x = Number(moveLeft) - Number(moveRight);
         direction.y = 0;
-        direction.normalize();
-
-        // Move relative to camera direction
-        const moveSpeed = 0.15;
-        if (moveForward || moveBackward || moveLeft || moveRight) {
-            // Calculate movement based on camera direction
-            const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
-            const movementVector = new THREE.Vector3();
+        
+        if (direction.length() > 0) {
+            direction.normalize();
             
-            // Forward/backward movement
-            movementVector.z = direction.z * Math.cos(angle) + direction.x * Math.sin(angle);
-            movementVector.x = direction.z * Math.sin(angle) - direction.x * Math.cos(angle);
+            // Calculate movement based on camera angle
+            const moveSpeed = 0.1;
+            const moveVector = new THREE.Vector3();
             
-            character.position.x += movementVector.x * moveSpeed;
-            character.position.z += movementVector.z * moveSpeed;
-
+            moveVector.x = direction.x * Math.cos(cameraAngle) + direction.z * Math.sin(cameraAngle);
+            moveVector.z = direction.z * Math.cos(cameraAngle) - direction.x * Math.sin(cameraAngle);
+            
+            // Apply movement
+            character.position.x += moveVector.x * moveSpeed;
+            character.position.z += moveVector.z * moveSpeed;
+            
             // Rotate character to face movement direction
-            if (movementVector.length() > 0) {
-                const targetAngle = Math.atan2(movementVector.x, movementVector.z);
-                character.rotation.y = targetAngle;
-            }
+            const targetAngle = Math.atan2(moveVector.x, moveVector.z);
+            character.rotation.y = targetAngle;
 
-            // Add a slight bob animation while moving
-            character.position.y = 0.5 + Math.sin(Date.now() * 0.01) * 0.05;
+            // Handle animations
+            if (character.animations) {
+                if (currentAnimation !== 'run') {
+                    const runAnim = character.animations.run;
+                    if (currentAnimation) {
+                        const currentAnim = character.animations[currentAnimation];
+                        currentAnim.crossFadeTo(runAnim, 0.2, true);
+                    }
+                    runAnim.play();
+                    currentAnimation = 'run';
+                }
+            }
+        } else if (currentAnimation !== 'idle' && character.animations) {
+            // Switch to idle animation
+            const idleAnim = character.animations.idle;
+            if (currentAnimation) {
+                const currentAnim = character.animations[currentAnimation];
+                currentAnim.crossFadeTo(idleAnim, 0.2, true);
+            }
+            idleAnim.play();
+            currentAnimation = 'idle';
         }
 
-        // Apply gravity
-        velocity.y -= 30 * delta;
+        // Apply gravity and jumping
+        velocity.y -= 20 * delta;
         character.position.y += velocity.y * delta;
 
-        // Ground check with minimum height
-        if (character.position.y < 0.5) {
+        if (character.position.y < 0) {
             velocity.y = 0;
-            character.position.y = 0.5;
+            character.position.y = 0;
             canJump = true;
         }
 
-        // Smooth camera follow
-        const idealOffset = new THREE.Vector3(
-            -Math.sin(character.rotation.y) * 4,
-            3,
-            -Math.cos(character.rotation.y) * 4
-        );
+        // Update camera position based on character and mouse movement
+        const cameraDistance = 5;
+        const cameraHeight = 2;
         
-        const idealLookat = new THREE.Vector3(
+        // Calculate camera position
+        camera.position.x = character.position.x - Math.sin(cameraAngle) * cameraDistance;
+        camera.position.z = character.position.z - Math.cos(cameraAngle) * cameraDistance;
+        camera.position.y = character.position.y + cameraHeight;
+        
+        // Make camera look at character's head level
+        camera.lookAt(
             character.position.x,
-            character.position.y + 1,
+            character.position.y + 1.5,
             character.position.z
         );
-
-        // Smoothly interpolate camera position
-        const currentPosition = camera.position;
-        const smoothSpeed = 0.1;
-        
-        camera.position.x = character.position.x + idealOffset.x;
-        camera.position.y = character.position.y + idealOffset.y;
-        camera.position.z = character.position.z + idealOffset.z;
-        
-        // Make camera look at character
-        camera.lookAt(idealLookat);
     }
 
-    // Add a gentle floating rotation when idle
-    if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
-        character.rotation.y += delta * 0.5;
+    if (mixer) {
+        mixer.update(delta);
     }
 }
+
 
 function animate() {
     requestAnimationFrame(animate);
