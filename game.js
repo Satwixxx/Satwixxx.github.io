@@ -128,217 +128,318 @@ function init() {
     // Create room
     createRoom();
 
-    // Create a detailed doll character as fallback
+    // Create a Vanellope von Schweetz character using primitive shapes
     try {
-        // Create a doll-like female character using primitive shapes
+        // Create a 3D Vanellope character
         character = new THREE.Group();
         
-        // Body - dress shape
-        const dressGeometry = new THREE.ConeGeometry(0.4, 1.2, 8);
-        const dressMaterial = new THREE.MeshStandardMaterial({ color: 0xff9ddb }); // Pink dress
-        const dress = new THREE.Mesh(dressGeometry, dressMaterial);
-        dress.position.y = 0.6;
-        dress.castShadow = true;
-        character.add(dress);
-        
-        // Upper body/torso
-        const torsoGeometry = new THREE.CapsuleGeometry(0.25, 0.3, 4, 8);
-        const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0xff9ddb }); // Pink to match dress
-        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
-        torso.position.y = 1.25;
-        torso.rotation.x = Math.PI / 2;
-        torso.castShadow = true;
-        character.add(torso);
-        
-        // Head
-        const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-        const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac }); // Skin tone
+        // Head with more detail (better sphere resolution)
+        const headGeometry = new THREE.SphereGeometry(0.25, 24, 24);
+        const headMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffdbac, // Skin tone
+            roughness: 0.7,
+            metalness: 0.1
+        }); 
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 1.65;
         head.castShadow = true;
         character.add(head);
         
-        // Cheeks/blush
-        const blushGeometry = new THREE.CircleGeometry(0.05, 8);
-        const blushMaterial = new THREE.MeshBasicMaterial({ color: 0xff9999 }); // Pink blush
-        const leftBlush = new THREE.Mesh(blushGeometry, blushMaterial);
-        leftBlush.position.set(0.15, 1.65, 0.2);
-        leftBlush.rotation.y = -Math.PI/2;
-        character.add(leftBlush);
+        // Black ponytail hairstyle
+        const hairBaseGeometry = new THREE.SphereGeometry(0.27, 24, 24, 0, Math.PI * 2, 0, Math.PI / 1.8);
+        const hairMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x151515, // Black hair like Vanellope's
+            roughness: 0.5,
+            metalness: 0.1
+        }); 
+        const hairBase = new THREE.Mesh(hairBaseGeometry, hairMaterial);
+        hairBase.position.y = 1.7;
+        hairBase.castShadow = true;
+        character.add(hairBase);
         
-        const rightBlush = new THREE.Mesh(blushGeometry, blushMaterial);
-        rightBlush.position.set(-0.15, 1.65, 0.2);
-        rightBlush.rotation.y = Math.PI/2;
-        character.add(rightBlush);
+        // Ponytail
+        const ponytailGeometry = new THREE.CylinderGeometry(0.15, 0.05, 0.6, 16);
+        const ponytail = new THREE.Mesh(ponytailGeometry, hairMaterial);
+        ponytail.position.set(0, 1.75, -0.15);
+        ponytail.rotation.x = -Math.PI/6;
+        ponytail.castShadow = true;
+        character.add(ponytail);
         
-        // Eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 }); // Black eyes
-        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(0.1, 1.7, 0.2);
-        character.add(leftEye);
+        // Candy decorations in hair
+        const candyColors = [0xff3366, 0x66ff33, 0x3366ff, 0xffcc00];
+        for (let i = 0; i < 5; i++) {
+            const candyGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const candyMaterial = new THREE.MeshStandardMaterial({
+                color: candyColors[i % candyColors.length],
+                roughness: 0.3,
+                metalness: 0.8
+            });
+            const candy = new THREE.Mesh(candyGeometry, candyMaterial);
+            
+            // Position candies around the hair
+            const angle = i * Math.PI / 3;
+            candy.position.set(
+                Math.sin(angle) * 0.2,
+                1.85 + (i % 2) * 0.07,
+                Math.cos(angle) * 0.2
+            );
+            candy.castShadow = true;
+            character.add(candy);
+        }
         
-        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        rightEye.position.set(-0.1, 1.7, 0.2);
-        character.add(rightEye);
+        // Big expressive eyes (Vanellope has large eyes)
+        const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
+        const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White part
         
-        // Mouth
-        const mouthGeometry = new THREE.BoxGeometry(0.12, 0.03, 0.03);
-        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0xff5555 }); // Red lips
+        // Left eye white
+        const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+        leftEyeWhite.position.set(0.12, 1.7, 0.21);
+        leftEyeWhite.scale.set(1.2, 1, 0.5);
+        character.add(leftEyeWhite);
+        
+        // Right eye white
+        const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+        rightEyeWhite.position.set(-0.12, 1.7, 0.21);
+        rightEyeWhite.scale.set(1.2, 1, 0.5);
+        character.add(rightEyeWhite);
+        
+        // Eye pupils (hazel/brown color for Vanellope)
+        const pupilGeometry = new THREE.SphereGeometry(0.03, 12, 12);
+        const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x553311 });
+        
+        // Left pupil
+        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        leftPupil.position.set(0.12, 1.7, 0.24);
+        character.add(leftPupil);
+        
+        // Right pupil
+        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        rightPupil.position.set(-0.12, 1.7, 0.24);
+        character.add(rightPupil);
+        
+        // Cute little nose
+        const noseGeometry = new THREE.ConeGeometry(0.03, 0.05, 16);
+        const noseMaterial = new THREE.MeshStandardMaterial({ color: 0xffcab6 });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.rotation.x = -Math.PI/2;
+        nose.position.set(0, 1.65, 0.25);
+        character.add(nose);
+        
+        // Smiling mouth
+        const mouthGeometry = new THREE.TorusGeometry(0.06, 0.015, 8, 12, Math.PI);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0xcc3333 }); // Red lips
         const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
-        mouth.position.set(0, 1.55, 0.24);
+        mouth.position.set(0, 1.58, 0.24);
+        mouth.rotation.x = Math.PI/2 - Math.PI/8;
         character.add(mouth);
         
-        // Hair - long hair for doll
-        const hairGeometry = new THREE.CylinderGeometry(0.27, 0.2, 1.0, 8);
-        const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown hair
-        const hair = new THREE.Mesh(hairGeometry, hairMaterial);
-        hair.position.y = 1.45;
-        hair.castShadow = true;
-        character.add(hair);
+        // Mint green hoodie (Vanellope's signature look)
+        const hoodieGeometry = new THREE.CapsuleGeometry(0.25, 0.5, 8, 16);
+        const hoodieMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x66CDAA, // Mint green
+            roughness: 0.6,
+            metalness: 0.1
+        });
+        const hoodie = new THREE.Mesh(hoodieGeometry, hoodieMaterial);
+        hoodie.position.y = 1.3;
+        hoodie.scale.set(1, 0.8, 0.6);
+        hoodie.castShadow = true;
+        character.add(hoodie);
         
-        // Hair bangs
-        const bangsGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.2);
-        const bangsMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown hair
-        const bangs = new THREE.Mesh(bangsGeometry, bangsMaterial);
-        bangs.position.set(0, 1.85, 0.15);
-        bangs.castShadow = true;
-        character.add(bangs);
+        // Hoodie strings
+        const stringGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.2, 6);
+        const stringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         
-        // Arms
-        const armGeometry = new THREE.CapsuleGeometry(0.08, 0.5, 4, 8);
-        const armMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac }); // Skin tone
+        const leftString = new THREE.Mesh(stringGeometry, stringMaterial);
+        leftString.position.set(0.1, 1.2, 0.2);
+        leftString.rotation.x = Math.PI/6;
+        character.add(leftString);
         
-        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        leftArm.position.set(0.4, 1.25, 0);
-        leftArm.rotation.z = -Math.PI/4;
+        const rightString = new THREE.Mesh(stringGeometry, stringMaterial);
+        rightString.position.set(-0.1, 1.2, 0.2);
+        rightString.rotation.x = Math.PI/6;
+        character.add(rightString);
+        
+        // Brown skirt (lower part)
+        const skirtGeometry = new THREE.ConeGeometry(0.35, 0.5, 16);
+        const skirtMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8B4513, // Brown skirt
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        const skirt = new THREE.Mesh(skirtGeometry, skirtMaterial);
+        skirt.position.y = 0.9;
+        skirt.castShadow = true;
+        character.add(skirt);
+        
+        // Arms with mint sleeves
+        const armGeometry = new THREE.CapsuleGeometry(0.07, 0.45, 8, 16);
+        
+        // Left arm
+        const leftArmMaterial = new THREE.MeshStandardMaterial({ color: 0x66CDAA }); // Match hoodie
+        const leftArm = new THREE.Mesh(armGeometry, leftArmMaterial);
+        leftArm.position.set(0.35, 1.3, 0);
+        leftArm.rotation.z = -Math.PI/6;
         leftArm.castShadow = true;
         character.add(leftArm);
         
-        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-        rightArm.position.set(-0.4, 1.25, 0);
-        rightArm.rotation.z = Math.PI/4;
+        // Left hand
+        const leftHandGeometry = new THREE.SphereGeometry(0.07, 16, 16);
+        const handMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac }); // Skin tone
+        const leftHand = new THREE.Mesh(leftHandGeometry, handMaterial);
+        leftHand.position.set(0.45, 1.1, 0);
+        leftHand.scale.set(1, 0.7, 0.7);
+        character.add(leftHand);
+        
+        // Right arm
+        const rightArmMaterial = new THREE.MeshStandardMaterial({ color: 0x66CDAA }); // Match hoodie
+        const rightArm = new THREE.Mesh(armGeometry, rightArmMaterial);
+        rightArm.position.set(-0.35, 1.3, 0);
+        rightArm.rotation.z = Math.PI/6;
         rightArm.castShadow = true;
         character.add(rightArm);
         
-        // Legs
-        const legGeometry = new THREE.CapsuleGeometry(0.08, 0.4, 4, 8);
-        const legMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff }); // White socks
+        // Right hand
+        const rightHand = new THREE.Mesh(leftHandGeometry.clone(), handMaterial);
+        rightHand.position.set(-0.45, 1.1, 0);
+        rightHand.scale.set(1, 0.7, 0.7);
+        character.add(rightHand);
         
-        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-        leftLeg.position.set(0.15, 0.2, 0);
+        // Mismatched stockings - Vanellope's iconic look
+        const legGeometry = new THREE.CapsuleGeometry(0.07, 0.5, 8, 16);
+        
+        // Left leg - green and white stripes
+        const leftLegMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xAAFF99, // Light green
+            roughness: 0.5
+        }); 
+        const leftLeg = new THREE.Mesh(legGeometry, leftLegMaterial);
+        leftLeg.position.set(0.15, 0.5, 0);
         leftLeg.castShadow = true;
         character.add(leftLeg);
         
-        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-        rightLeg.position.set(-0.15, 0.2, 0);
+        // Add stripes to left leg
+        for (let i = 0; i < 4; i++) {
+            const stripeGeometry = new THREE.TorusGeometry(0.08, 0.02, 8, 16, Math.PI * 2);
+            const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            stripe.position.set(0.15, 0.35 + i * 0.15, 0);
+            stripe.rotation.x = Math.PI/2;
+            stripe.scale.set(1, 1, 0.1);
+            character.add(stripe);
+        }
+        
+        // Right leg - pink and white stripes
+        const rightLegMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xFF99AA, // Light pink
+            roughness: 0.5
+        }); 
+        const rightLeg = new THREE.Mesh(legGeometry, rightLegMaterial);
+        rightLeg.position.set(-0.15, 0.5, 0);
         rightLeg.castShadow = true;
         character.add(rightLeg);
         
-        // Shoes
-        const shoeGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.2);
-        const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 }); // Black shoes
+        // Add stripes to right leg
+        for (let i = 0; i < 4; i++) {
+            const stripeGeometry = new THREE.TorusGeometry(0.08, 0.02, 8, 16, Math.PI * 2);
+            const stripeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            stripe.position.set(-0.15, 0.35 + i * 0.15, 0);
+            stripe.rotation.x = Math.PI/2;
+            stripe.scale.set(1, 1, 0.1);
+            character.add(stripe);
+        }
         
+        // Black shoes with small mint details
+        const shoeGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.22);
+        const shoeMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x000000,
+            roughness: 0.4,
+            metalness: 0.3 
+        }); 
+        
+        // Left shoe
         const leftShoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
-        leftShoe.position.set(0.15, 0, 0.05);
+        leftShoe.position.set(0.15, 0.04, 0.05);
         leftShoe.castShadow = true;
         character.add(leftShoe);
         
+        // Right shoe
         const rightShoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
-        rightShoe.position.set(-0.15, 0, 0.05);
+        rightShoe.position.set(-0.15, 0.04, 0.05);
         rightShoe.castShadow = true;
         character.add(rightShoe);
         
-        // Add direction indicator for the doll (like a hair bow)
-        const bowGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.05);
-        const bowMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Red bow
-        const bow = new THREE.Mesh(bowGeometry, bowMaterial);
-        bow.position.set(0, 1.9, 0.15); // Position on top of head
-        bow.castShadow = true;
-        character.add(bow);
+        // Mint accent on shoes
+        const shoeAccentGeometry = new THREE.BoxGeometry(0.06, 0.03, 0.05);
+        const shoeAccentMaterial = new THREE.MeshStandardMaterial({ color: 0x66CDAA });
+        
+        const leftShoeAccent = new THREE.Mesh(shoeAccentGeometry, shoeAccentMaterial);
+        leftShoeAccent.position.set(0.15, 0.08, 0.15);
+        character.add(leftShoeAccent);
+        
+        const rightShoeAccent = new THREE.Mesh(shoeAccentGeometry, shoeAccentMaterial);
+        rightShoeAccent.position.set(-0.15, 0.08, 0.15);
+        character.add(rightShoeAccent);
+        
+        // Add a few glitching particle effects (representing Vanellope's glitching)
+        const glitchParticles = new THREE.Group();
+        const glitchColors = [0x00ffff, 0xff00ff, 0xffff00];
+        
+        for (let i = 0; i < 8; i++) {
+            const size = 0.05 + Math.random() * 0.05;
+            const glitchGeometry = new THREE.BoxGeometry(size, size, size);
+            const glitchMaterial = new THREE.MeshBasicMaterial({ 
+                color: glitchColors[Math.floor(Math.random() * glitchColors.length)],
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            const glitchCube = new THREE.Mesh(glitchGeometry, glitchMaterial);
+            
+            // Position randomly around the character
+            glitchCube.position.set(
+                (Math.random() - 0.5) * 0.6,
+                0.5 + Math.random() * 1.5,
+                (Math.random() - 0.5) * 0.6
+            );
+            
+            glitchParticles.add(glitchCube);
+        }
+        
+        // Add glitch particles to character
+        character.add(glitchParticles);
+        
+        // Set initial properties to animate the glitching effect
+        character.glitchTime = 0;
+        character.lastGlitchTime = 0;
+        character.isGlitching = false;
         
         // Add character to scene
         character.position.y = 0;
         character.rotation.y = Math.PI; // Face forward
         scene.add(character);
-        console.log('Detailed doll character created using primitives');
+        console.log('Vanellope von Schweetz character created successfully');
     } catch (e) {
         console.error("Failed to create fallback character", e);
     }
     
-    // Try to load a female doll character model
-    try {
-        console.log('Starting to load character model...');
-        const loader = new THREE.GLTFLoader();
-        
-        // Try to load a female doll character from reliable source
-        // Using a more reliable character model that's smaller and simpler
-        loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/SimpleSparseAccessor/glTF/SimpleSparseAccessor.gltf', (gltf) => {
-            console.log('Model loaded, processing...');
-            // Only remove the fallback character if we successfully loaded a new one
-            scene.remove(character);
-            
-            character = gltf.scene;
-            character.scale.set(0.5, 0.5, 0.5); // Scale to appropriate size
-            character.position.y = 0;
-            
-            // Ensure all materials are visible
-            character.traverse((node) => {
-                if (node.isMesh) {
-                    // Set pink doll-like material
-                    if (node.material) {
-                        node.material = new THREE.MeshStandardMaterial({ 
-                            color: 0xff9ddb,
-                            roughness: 0.3,
-                            metalness: 0.2
-                        });
-                    }
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                }
-            });
-            
-            scene.add(character);
-            console.log('Character model loaded and processed successfully');
-            
-            // Setup character animations
-            mixer = new THREE.AnimationMixer(character);
-            const animations = gltf.animations;
-            if (animations && animations.length > 0) {
-                console.log('Found animations:', animations.length);
-                // Try to find best matches for idle, walk, run
-                const idleAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('idle')) || animations[0]);
-                const walkAnim = mixer.clipAction(animations.find(a => a.name.toLowerCase().includes('walk')) || 
-                    animations.find(a => a.name.toLowerCase().includes('run')) || animations[0]);
-                
-                // Make sure animations exist before playing
-                if (idleAnim) {
-                    idleAnim.play();
-                    currentAnimation = 'idle';
-                    character.animations = { idle: idleAnim, walk: walkAnim };
-                    console.log('Animations started successfully');
-                } else {
-                    console.log('No animations found to play');
-                }
-            }
-        }, 
-        // Progress callback
-        (xhr) => {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            // Update loading indicator
-            const loadingDiv = document.getElementById('loading');
-            if (loadingDiv) {
-                loadingDiv.innerHTML = 'Loading character: ' + Math.floor(xhr.loaded / xhr.total * 100) + '%';
-            }
-        }, 
-        (error) => {
-            console.error('Error loading character model:', error);
-            // We keep our fallback character that's already created
-            console.log('Using existing fallback doll character');
-        });
-    } catch (e) {
-        console.error('Exception during character loading setup:', e);
-        // Fallback already exists
+    // We'll skip loading an external model and use our custom Vanellope model
+    // The custom Vanellope model is already detailed and animated
+    console.log('Using custom Vanellope von Schweetz character model');
+    
+    // Set up initial properties for character animations
+    character.glitchTime = 0;
+    character.lastGlitchTime = 0;
+    character.isGlitching = false;
+    
+    // Hide loading indicator since we're using our custom model
+    const loadingDiv = document.getElementById('loading');
+    if (loadingDiv) {
+        loadingDiv.innerHTML = 'Vanellope is ready to race!';
+        setTimeout(() => {
+            loadingDiv.style.display = 'none';
+        }, 2000);
     }
 
     camera.position.set(0, 2, 5);
@@ -615,28 +716,119 @@ function updateCharacterPosition() {
                 currentAnimation = 'idle';
             }
         } else {
-            // Simple animation for our fallback doll character
+            // Vanellope von Schweetz animations
+            
+            // Walking animation
             if (isMoving) {
-                // Simple bobbing motion for walking
+                // Bouncy walking motion
                 const walkBobHeight = Math.sin(Date.now() * 0.01) * 0.05;
                 
-                // Find and animate the dress part of our doll if it exists
+                // Animate arms and legs
                 character.children.forEach(part => {
-                    // Simple arm swinging for walking
+                    // Arm swinging - mint green sleeves
                     if (part.geometry && part.geometry.type.includes('CapsuleGeometry') && 
-                        (part.position.x > 0.3 || part.position.x < -0.3)) {
-                        // These are likely the arms
-                        const swingAngle = Math.sin(Date.now() * 0.005) * 0.5;
+                        (part.position.x > 0.3 || part.position.x < -0.3) &&
+                        part.position.y > 1) {
+                        // These are the arms
+                        const swingAngle = Math.sin(Date.now() * 0.008) * 0.5;
                         if (part.position.x > 0) {
-                            part.rotation.z = -Math.PI/4 + swingAngle;
+                            part.rotation.z = -Math.PI/6 + swingAngle;
+                            part.rotation.x = Math.sin(Date.now() * 0.005) * 0.1;
                         } else {
-                            part.rotation.z = Math.PI/4 - swingAngle;
+                            part.rotation.z = Math.PI/6 - swingAngle;
+                            part.rotation.x = -Math.sin(Date.now() * 0.005) * 0.1;
                         }
+                    }
+                    
+                    // Leg swinging - mismatched stockings
+                    if (part.geometry && part.geometry.type.includes('CapsuleGeometry') && 
+                        (part.position.x > 0.1 || part.position.x < -0.1) &&
+                        part.position.y < 1) {
+                        // These are the legs
+                        const legSwing = Math.sin(Date.now() * 0.01) * 0.3;
+                        if (part.position.x > 0) {
+                            part.rotation.x = legSwing;
+                        } else {
+                            part.rotation.x = -legSwing;
+                        }
+                    }
+                    
+                    // Make ponytail bounce
+                    if (part.geometry && part.geometry.type.includes('Cylinder') && 
+                        part.position.z < 0) {
+                        // This is the ponytail
+                        part.rotation.x = -Math.PI/6 + Math.sin(Date.now() * 0.01) * 0.1;
                     }
                 });
                 
-                // Add a small bounce to the character
+                // Bounce effect for walking
                 character.position.y = Math.max(0, character.position.y + walkBobHeight);
+            }
+            
+            // Glitching animation - Vanellope's signature glitching effect
+            const now = Date.now();
+            
+            // Random glitching every 3-8 seconds
+            if (now - character.lastGlitchTime > 3000 + Math.random() * 5000) {
+                character.isGlitching = true;
+                character.glitchTime = now;
+                character.lastGlitchTime = now;
+                
+                // Find and show glitch particles
+                character.children.forEach(child => {
+                    if (child.isGroup && child.children.length > 0 && 
+                        child.children[0].material && 
+                        child.children[0].material.transparent) {
+                        // These are our glitch particles
+                        child.visible = true;
+                        child.children.forEach(particle => {
+                            // Randomize position during glitching
+                            particle.position.set(
+                                (Math.random() - 0.5) * 1.0,
+                                0.5 + Math.random() * 1.5,
+                                (Math.random() - 0.5) * 1.0
+                            );
+                        });
+                    }
+                });
+            }
+            
+            // Handle active glitching animation
+            if (character.isGlitching) {
+                const glitchDuration = 800; // ms
+                const glitchElapsed = now - character.glitchTime;
+                
+                if (glitchElapsed < glitchDuration) {
+                    // Visual glitching effect
+                    if (glitchElapsed % 120 < 60) {
+                        // Shift character slightly to create jerky movement
+                        character.position.x += (Math.random() - 0.5) * 0.05;
+                        character.position.z += (Math.random() - 0.5) * 0.05;
+                        
+                        // Randomly show/hide glitch particles
+                        character.children.forEach(child => {
+                            if (child.isGroup && child.children.length > 0 && 
+                                child.children[0].material && 
+                                child.children[0].material.transparent) {
+                                child.children.forEach(particle => {
+                                    particle.visible = Math.random() > 0.5;
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    // End glitching
+                    character.isGlitching = false;
+                    
+                    // Hide glitch particles
+                    character.children.forEach(child => {
+                        if (child.isGroup && child.children.length > 0 && 
+                            child.children[0].material && 
+                            child.children[0].material.transparent) {
+                            child.visible = false;
+                        }
+                    });
+                }
             }
         }
         // Apply gravity and jumping with improved physics
