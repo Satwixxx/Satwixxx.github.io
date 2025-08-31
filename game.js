@@ -10,10 +10,29 @@ const clock = new THREE.Clock();
 let controls;
 let currentAnimation = null;
 
+function createGradientTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 1;
+
+    const context = canvas.getContext('2d');
+    const gradient = context.createLinearGradient(0, 0, 256, 0);
+    gradient.addColorStop(0.0, '#444');
+    gradient.addColorStop(0.5, '#FFF');
+    gradient.addColorStop(1.0, '#444');
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 256, 1);
+
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+}
+
 // Initialize the scene
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+    scene.background = new THREE.Color(0xFFB6E6); // Cotton candy pink background
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     
@@ -21,10 +40,13 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     document.body.appendChild(renderer.domElement);
 
     // Initialize pointer lock controls
-    controls = new THREE.PointerLockControls(camera, document.body);
+    controls = new THREE.PointerLockControls(camera, renderer.domElement);
 
     const instructions = document.getElementById('instructions');
 
@@ -52,19 +74,34 @@ function init() {
     // Create room
     createRoom();
 
-    // Load character model
+    // Load character model (using a stylized character model that looks more like Vanellope)
     const loader = new THREE.GLTFLoader();
-    loader.load('https://threejs.org/examples/models/gltf/Xbot.glb', (gltf) => {
+    loader.load('https://models.readyplayer.me/647fa3df2857489b2c3816c1.glb', (gltf) => {
         character = gltf.scene;
         character.scale.set(0.8, 0.8, 0.8);
         character.position.y = 0;
+        
+        // Apply cartoon shader to character
+        character.traverse((node) => {
+            if (node.isMesh) {
+                node.material = new THREE.MeshToonMaterial({
+                    map: node.material.map,
+                    gradientMap: createGradientTexture(),
+                    color: node.material.color
+                });
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
+        });
+        
         scene.add(character);
 
         mixer = new THREE.AnimationMixer(character);
         const animations = gltf.animations;
-        const idleAnimation = mixer.clipAction(animations[0]);
-        const walkAnimation = mixer.clipAction(animations[3]);
-        idleAnimation.play();
+        if (animations && animations.length > 0) {
+            const idleAnimation = mixer.clipAction(animations[0]);
+            idleAnimation.play();
+        }
     });
 
     camera.position.set(0, 2, 5);
@@ -77,26 +114,40 @@ function init() {
 }
 
 function createRoom() {
-    // Floor with candy-themed texture
-    const floorGeometry = new THREE.PlaneGeometry(20, 20);
-    const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xFF9ECD, // Pink candy color
-        roughness: 0.3,
-        metalness: 0.2
+    // Create candy-themed decorative elements
+    const createCandy = (x, y, z, color) => {
+        const candy = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 8, 8),
+            new THREE.MeshToonMaterial({ color: color })
+        );
+        candy.position.set(x, y, z);
+        candy.castShadow = true;
+        scene.add(candy);
+    };
+
+    // Floor with candy pattern
+    const floorGeometry = new THREE.PlaneGeometry(20, 20, 20, 20);
+    const vertices = floorGeometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        vertices[i + 1] = Math.sin(vertices[i] * 0.5) * Math.cos(vertices[i + 2] * 0.5) * 0.2;
+    }
+    
+    const floorMaterial = new THREE.MeshToonMaterial({ 
+        color: 0xFF70A6, // Bright candy pink
+        gradientMap: createGradientTexture()
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Walls with candy-themed colors
-    const wallMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x9EE5FF, // Light blue
-        roughness: 0.3,
-        metalness: 0.1
+    // Walls with cartoon style
+    const wallMaterial = new THREE.MeshToonMaterial({ 
+        color: 0x9EE5FF,
+        gradientMap: createGradientTexture()
     });
 
-    // Back wall
+    // Back wall with candy decorations
     const backWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
         wallMaterial.clone()
@@ -104,40 +155,49 @@ function createRoom() {
     backWall.position.z = -10;
     backWall.position.y = 5;
     backWall.receiveShadow = true;
-    backWall.castShadow = true;
     scene.add(backWall);
 
-    // Left wall
+    // Add lollipop decorations to back wall
+    for(let i = -8; i <= 8; i += 4) {
+        createCandy(i, 8, -9.8, 0xFF4D4D);
+    }
+
+    // Left wall with candy stripes
     const leftWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
-        new THREE.MeshStandardMaterial({ 
-            color: 0xFFB6C1, // Light pink
-            roughness: 0.3,
-            metalness: 0.1
+        new THREE.MeshToonMaterial({ 
+            color: 0xFFB6E6,
+            gradientMap: createGradientTexture()
         })
     );
     leftWall.position.x = -10;
     leftWall.position.y = 5;
     leftWall.rotation.y = Math.PI / 2;
     leftWall.receiveShadow = true;
-    leftWall.castShadow = true;
     scene.add(leftWall);
 
-    // Right wall
+    // Right wall with candy decorations
     const rightWall = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 10),
-        new THREE.MeshStandardMaterial({ 
-            color: 0x98FF98, // Mint green
-            roughness: 0.3,
-            metalness: 0.1
+        new THREE.MeshToonMaterial({ 
+            color: 0xA5FFD6,
+            gradientMap: createGradientTexture()
         })
     );
     rightWall.position.x = 10;
     rightWall.position.y = 5;
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.receiveShadow = true;
-    rightWall.castShadow = true;
     scene.add(rightWall);
+
+    // Add floating candy decorations
+    for(let i = 0; i < 20; i++) {
+        const x = Math.random() * 16 - 8;
+        const y = Math.random() * 6 + 2;
+        const z = Math.random() * 16 - 8;
+        const color = new THREE.Color().setHSL(Math.random(), 0.7, 0.6);
+        createCandy(x, y, z, color);
+    }
 }
 
 function onKeyDown(event) {
@@ -189,19 +249,18 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
-    if (character && controls.isLocked) {
-        // Get camera direction
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-        
-        // Calculate movement direction relative to camera
+    if (character) {
+        // Get movement direction
         direction.x = Number(moveRight) - Number(moveLeft);
         direction.z = Number(moveBackward) - Number(moveForward);
         direction.y = 0;
-        direction.normalize();
+        
+        if (direction.length() > 0) {
+            direction.normalize();
+        }
 
-        // Adjust movement direction based on camera rotation
-        const moveSpeed = 0.15;
+        // Adjust movement speed and direction
+        const moveSpeed = 0.2;
         if (moveForward || moveBackward || moveLeft || moveRight) {
             const angle = Math.atan2(cameraDirection.x, cameraDirection.z);
             const rotatedDirection = direction.clone();
