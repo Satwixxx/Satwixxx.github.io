@@ -30,6 +30,11 @@ function createGradientTexture() {
 }
 
 // Initialize the scene
+// Define global camera variables
+let cameraAngle = 0;
+let cameraHeight = 2;
+let mouseSensitivity = 0.002;
+
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xFFB6E6); // Cotton candy pink background
@@ -40,15 +45,15 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.outputEncoding = THREE.sRGBEncoding;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    // Fix for potential errors in some browsers
+    if (renderer.outputEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+    }
+    if (renderer.toneMapping !== undefined) {
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+    }
     document.body.appendChild(renderer.domElement);
-
-    // Initialize variables for camera control
-    let cameraAngle = 0;
-    let cameraHeight = 2;
-    let mouseSensitivity = 0.002;
 
     document.addEventListener('mousemove', (event) => {
         if (document.pointerLockElement === renderer.domElement) {
@@ -82,9 +87,22 @@ function init() {
     // Create room
     createRoom();
 
-    // Load a visible, animated, cute girl character model (ReadyPlayerMe demo)
+    // Create a fallback character first so we always have something visible
+    const geometryFallback = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+    const materialFallback = new THREE.MeshStandardMaterial({ color: 0xff69b4 }); // Pink color
+    character = new THREE.Mesh(geometryFallback, materialFallback);
+    character.position.y = 0.75;
+    character.castShadow = true;
+    character.receiveShadow = true;
+    scene.add(character);
+    console.log('Initial fallback character created');
+    
+    // Try to load the animated girl model
     const loader = new THREE.GLTFLoader();
-    loader.load('https://models.readyplayer.me/64e72a2e4e4fde3c9367a3f7.glb', (gltf) => {
+    loader.load('https://models.readyplayer.me/64f3886ce4bc2a273828cd23.glb', (gltf) => {
+        // Remove the fallback character
+        scene.remove(character);
+        
         character = gltf.scene;
         character.scale.set(1.2, 1.2, 1.2); // Slightly larger for visibility
         character.position.y = 0;
@@ -268,23 +286,31 @@ function onWindowResize() {
 function updateCharacterPosition() {
     const delta = clock.getDelta();
     
-    if (character && document.pointerLockElement === renderer.domElement) {
+    if (character) {
         // Calculate movement direction based on camera angle
         direction.z = Number(moveForward) - Number(moveBackward);
         direction.x = Number(moveLeft) - Number(moveRight);
         direction.y = 0;
         let isMoving = false;
+        
+        // Handle movement regardless of pointer lock
         if (direction.length() > 0) {
             direction.normalize();
             isMoving = true;
             // Calculate movement based on camera angle
             const moveSpeed = 0.12;
             const moveVector = new THREE.Vector3();
-            moveVector.x = direction.x * Math.cos(cameraAngle) + direction.z * Math.sin(cameraAngle);
-            moveVector.z = direction.z * Math.cos(cameraAngle) - direction.x * Math.sin(cameraAngle);
+            
+            // Use a default angle if cameraAngle is not defined
+            const angle = (typeof cameraAngle !== 'undefined') ? cameraAngle : 0;
+            
+            moveVector.x = direction.x * Math.cos(angle) + direction.z * Math.sin(angle);
+            moveVector.z = direction.z * Math.cos(angle) - direction.x * Math.sin(angle);
+            
             // Apply movement
             character.position.x += moveVector.x * moveSpeed;
             character.position.z += moveVector.z * moveSpeed;
+            
             // Rotate character to face movement direction
             const targetAngle = Math.atan2(moveVector.x, moveVector.z);
             character.rotation.y = targetAngle;
@@ -315,7 +341,6 @@ function updateCharacterPosition() {
         }
         // Update camera position based on character and mouse movement
         const cameraDistance = 5;
-        const cameraHeight = 2;
         camera.position.x = character.position.x - Math.sin(cameraAngle) * cameraDistance;
         camera.position.z = character.position.z - Math.cos(cameraAngle) * cameraDistance;
         camera.position.y = character.position.y + cameraHeight;
