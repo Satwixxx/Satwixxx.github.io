@@ -109,21 +109,28 @@ function init() {
         });
     }
 
-    // Add strong lighting to ensure visibility
-    // Ambient light ensures everything is at least somewhat visible
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Brighter ambient
+    // Enhanced lighting to ensure maximum visibility
+    // Stronger ambient light for better overall visibility
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9); // Brighter ambient
     scene.add(ambientLight);
 
     // Main directional light (like the sun)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Full intensity
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); // Higher intensity
     directionalLight.position.set(5, 10, 5);
     directionalLight.castShadow = true;
+    // Increase shadow map size for better quality
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
     
-    // Additional light to ensure character is well-lit
-    const pointLight = new THREE.PointLight(0xffffff, 0.8);
-    pointLight.position.set(0, 5, 2);
-    scene.add(pointLight);
+    // Additional lights to ensure character is well-lit from multiple angles
+    const frontLight = new THREE.PointLight(0xffffee, 1.0); // Slightly warm light
+    frontLight.position.set(0, 3, 5); // In front of character
+    scene.add(frontLight);
+    
+    const backLight = new THREE.PointLight(0xeeeeff, 0.7); // Slightly cool back light
+    backLight.position.set(0, 4, -4); // Behind character
+    scene.add(backLight);
 
     // Create room
     createRoom();
@@ -133,16 +140,19 @@ function init() {
         // Create a 3D Vanellope character
         character = new THREE.Group();
         
-        // Head with more detail (better sphere resolution)
+        // Head with more detail (better sphere resolution) and enhanced visibility
         const headGeometry = new THREE.SphereGeometry(0.25, 24, 24);
         const headMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xffdbac, // Skin tone
-            roughness: 0.7,
-            metalness: 0.1
+            roughness: 0.5,
+            metalness: 0.1,
+            emissive: 0x221100, // Slight emissive color for better visibility
+            emissiveIntensity: 0.2
         }); 
         const head = new THREE.Mesh(headGeometry, headMaterial);
         head.position.y = 1.65;
         head.castShadow = true;
+        head.receiveShadow = true;
         character.add(head);
         
         // Black ponytail hairstyle
@@ -233,17 +243,20 @@ function init() {
         mouth.rotation.x = Math.PI/2 - Math.PI/8;
         character.add(mouth);
         
-        // Mint green hoodie (Vanellope's signature look)
+        // Mint green hoodie (Vanellope's signature look) - more vibrant for visibility
         const hoodieGeometry = new THREE.CapsuleGeometry(0.25, 0.5, 8, 16);
         const hoodieMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x66CDAA, // Mint green
-            roughness: 0.6,
-            metalness: 0.1
+            color: 0x00FFAA, // Brighter mint green for visibility
+            roughness: 0.4,
+            metalness: 0.2,
+            emissive: 0x005533, // Slight emissive glow
+            emissiveIntensity: 0.3
         });
         const hoodie = new THREE.Mesh(hoodieGeometry, hoodieMaterial);
         hoodie.position.y = 1.3;
         hoodie.scale.set(1, 0.8, 0.6);
         hoodie.castShadow = true;
+        hoodie.receiveShadow = true;
         character.add(hoodie);
         
         // Hoodie strings
@@ -382,56 +395,48 @@ function init() {
         rightShoeAccent.position.set(-0.15, 0.08, 0.15);
         character.add(rightShoeAccent);
         
-        // Add a few glitching particle effects (representing Vanellope's glitching)
-        const glitchParticles = new THREE.Group();
-        const glitchColors = [0x00ffff, 0xff00ff, 0xffff00];
-        
-        for (let i = 0; i < 8; i++) {
-            const size = 0.05 + Math.random() * 0.05;
-            const glitchGeometry = new THREE.BoxGeometry(size, size, size);
-            const glitchMaterial = new THREE.MeshBasicMaterial({ 
-                color: glitchColors[Math.floor(Math.random() * glitchColors.length)],
-                transparent: true,
-                opacity: 0.7
-            });
-            
-            const glitchCube = new THREE.Mesh(glitchGeometry, glitchMaterial);
-            
-            // Position randomly around the character
-            glitchCube.position.set(
-                (Math.random() - 0.5) * 0.6,
-                0.5 + Math.random() * 1.5,
-                (Math.random() - 0.5) * 0.6
-            );
-            
-            glitchParticles.add(glitchCube);
-        }
-        
-        // Add glitch particles to character
-        character.add(glitchParticles);
-        
-        // Set initial properties to animate the glitching effect
-        character.glitchTime = 0;
-        character.lastGlitchTime = 0;
-        character.isGlitching = false;
-        
-        // Add character to scene
+        // Add character to scene with proper positioning
         character.position.y = 0;
         character.rotation.y = Math.PI; // Face forward
+        character.scale.set(1.2, 1.2, 1.2); // Make character larger for better visibility
+        
+        // Ensure all meshes cast and receive shadows for better visibility
+        character.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+                // Make materials brighter for better visibility
+                if (node.material) {
+                    node.material.emissive = new THREE.Color(0x222222);
+                }
+            }
+        });
+        
+        // Add character to scene and make sure it's visible
         scene.add(character);
-        console.log('Vanellope von Schweetz character created successfully');
+        
+        // Log character creation
+        console.log('Simplified Vanellope character created and added to scene:', character);
+        
+        // Force an immediate render to check visibility
+        if (renderer) {
+            renderer.render(scene, camera);
+        }
     } catch (e) {
         console.error("Failed to create fallback character", e);
     }
     
-    // We'll skip loading an external model and use our custom Vanellope model
-    // The custom Vanellope model is already detailed and animated
+    // Using our custom Vanellope model with simplified animations
     console.log('Using custom Vanellope von Schweetz character model');
     
-    // Set up initial properties for character animations
-    character.glitchTime = 0;
-    character.lastGlitchTime = 0;
-    character.isGlitching = false;
+    // Add a spotlight directly on the character for better visibility
+    const characterSpotlight = new THREE.SpotLight(0xffffff, 1.5);
+    characterSpotlight.position.set(0, 5, 3);
+    characterSpotlight.target = character;
+    characterSpotlight.angle = Math.PI/6;
+    characterSpotlight.penumbra = 0.2;
+    characterSpotlight.castShadow = true;
+    scene.add(characterSpotlight);
     
     // Hide loading indicator since we're using our custom model
     const loadingDiv = document.getElementById('loading');
@@ -442,8 +447,16 @@ function init() {
         }, 2000);
     }
 
-    camera.position.set(0, 2, 5);
-    camera.lookAt(0, 1, 0);
+    // Position camera closer to character for better visibility
+    camera.position.set(0, 3, 4); // Higher up and closer
+    camera.lookAt(0, 1.5, 0); // Look more directly at character's head
+    
+    // Set character in a well-lit position
+    character.position.set(0, 0, 0);
+    
+    // Force a render to make sure character is visible immediately
+    renderer.render(scene, camera);
+    console.log("Camera positioned to view character:", camera.position);
 
     // Event listeners for controls
     document.addEventListener('keydown', onKeyDown);
@@ -716,27 +729,24 @@ function updateCharacterPosition() {
                 currentAnimation = 'idle';
             }
         } else {
-            // Vanellope von Schweetz animations
+            // Simplified Vanellope animations - just walking, no glitching
             
-            // Walking animation
             if (isMoving) {
-                // Bouncy walking motion
+                // Simple bouncy walking motion
                 const walkBobHeight = Math.sin(Date.now() * 0.01) * 0.05;
                 
-                // Animate arms and legs
+                // Animate arms and legs with simple movements
                 character.children.forEach(part => {
                     // Arm swinging - mint green sleeves
                     if (part.geometry && part.geometry.type.includes('CapsuleGeometry') && 
                         (part.position.x > 0.3 || part.position.x < -0.3) &&
                         part.position.y > 1) {
                         // These are the arms
-                        const swingAngle = Math.sin(Date.now() * 0.008) * 0.5;
+                        const swingAngle = Math.sin(Date.now() * 0.008) * 0.4;
                         if (part.position.x > 0) {
                             part.rotation.z = -Math.PI/6 + swingAngle;
-                            part.rotation.x = Math.sin(Date.now() * 0.005) * 0.1;
                         } else {
                             part.rotation.z = Math.PI/6 - swingAngle;
-                            part.rotation.x = -Math.sin(Date.now() * 0.005) * 0.1;
                         }
                     }
                     
@@ -763,72 +773,6 @@ function updateCharacterPosition() {
                 
                 // Bounce effect for walking
                 character.position.y = Math.max(0, character.position.y + walkBobHeight);
-            }
-            
-            // Glitching animation - Vanellope's signature glitching effect
-            const now = Date.now();
-            
-            // Random glitching every 3-8 seconds
-            if (now - character.lastGlitchTime > 3000 + Math.random() * 5000) {
-                character.isGlitching = true;
-                character.glitchTime = now;
-                character.lastGlitchTime = now;
-                
-                // Find and show glitch particles
-                character.children.forEach(child => {
-                    if (child.isGroup && child.children.length > 0 && 
-                        child.children[0].material && 
-                        child.children[0].material.transparent) {
-                        // These are our glitch particles
-                        child.visible = true;
-                        child.children.forEach(particle => {
-                            // Randomize position during glitching
-                            particle.position.set(
-                                (Math.random() - 0.5) * 1.0,
-                                0.5 + Math.random() * 1.5,
-                                (Math.random() - 0.5) * 1.0
-                            );
-                        });
-                    }
-                });
-            }
-            
-            // Handle active glitching animation
-            if (character.isGlitching) {
-                const glitchDuration = 800; // ms
-                const glitchElapsed = now - character.glitchTime;
-                
-                if (glitchElapsed < glitchDuration) {
-                    // Visual glitching effect
-                    if (glitchElapsed % 120 < 60) {
-                        // Shift character slightly to create jerky movement
-                        character.position.x += (Math.random() - 0.5) * 0.05;
-                        character.position.z += (Math.random() - 0.5) * 0.05;
-                        
-                        // Randomly show/hide glitch particles
-                        character.children.forEach(child => {
-                            if (child.isGroup && child.children.length > 0 && 
-                                child.children[0].material && 
-                                child.children[0].material.transparent) {
-                                child.children.forEach(particle => {
-                                    particle.visible = Math.random() > 0.5;
-                                });
-                            }
-                        });
-                    }
-                } else {
-                    // End glitching
-                    character.isGlitching = false;
-                    
-                    // Hide glitch particles
-                    character.children.forEach(child => {
-                        if (child.isGroup && child.children.length > 0 && 
-                            child.children[0].material && 
-                            child.children[0].material.transparent) {
-                            child.visible = false;
-                        }
-                    });
-                }
             }
         }
         // Apply gravity and jumping with improved physics
