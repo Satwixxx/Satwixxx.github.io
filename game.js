@@ -128,23 +128,44 @@ function init() {
     // Create room
     createRoom();
 
-    // Create a simple visible box character as fallback
+    // Create a simple visible girl character as fallback
     try {
-        const geometryFallback = new THREE.BoxGeometry(1, 2, 1); // Simple box
-        const materialFallback = new THREE.MeshStandardMaterial({ color: 0xff00ff }); // Bright magenta
-        character = new THREE.Mesh(geometryFallback, materialFallback);
-        character.position.y = 1; // Lift it above the ground
-        character.castShadow = true;
-        character.receiveShadow = true;
+        // Create a simplified girl shape using primitive shapes
+        const bodyGeometry = new THREE.CapsuleGeometry(0.3, 1.2, 4, 8);
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff9ddb }); // Pink for dress
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        
+        const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac }); // Skin tone
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.y = 1.4;
+        head.castShadow = true;
+        
+        // Hair - long hair for girl character
+        const hairGeometry = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 }); // Black hair
+        const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+        hair.position.y = 1.45;
+        hair.rotation.x = Math.PI;
+        hair.castShadow = true;
+        
+        // Group all parts together
+        character = new THREE.Group();
+        character.add(body);
+        character.add(head);
+        character.add(hair);
+        character.position.y = 0;
         scene.add(character);
-        console.log('Initial fallback character created');
+        console.log('Initial girl character created using primitives');
     } catch (e) {
         console.error("Failed to create fallback character", e);
     }
     
-    // Try to load a simpler model for better compatibility
+    // Try to load a female character model
     const loader = new THREE.GLTFLoader();
-    loader.load('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/BoxAnimated/glTF/BoxAnimated.gltf', (gltf) => {
+    loader.load('https://models.readyplayer.me/6571a2c6d72d094d6ef1d253.glb', (gltf) => {
         // Remove the fallback character
         scene.remove(character);
         
@@ -257,7 +278,7 @@ function createRoom() {
     rightWall.receiveShadow = true;
     scene.add(rightWall);
 
-    // Add some furniture and decorations
+    // Add furniture and decorations
     // Window
     const windowFrame = new THREE.Mesh(
         new THREE.BoxGeometry(4, 6, 0.3),
@@ -280,6 +301,54 @@ function createRoom() {
     );
     windowGlass.position.set(0, 5, -9.6);
     scene.add(windowGlass);
+    
+    // Add door that touches the ground
+    const doorFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 7, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown wood color
+    );
+    doorFrame.position.set(-6, 3.5, -9.8); // Lower position to touch ground
+    scene.add(doorFrame);
+    
+    // Door panel
+    const doorPanel = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 6.8, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0xA0522D }) // Sienna brown
+    );
+    doorPanel.position.set(-6, 3.4, -9.65);
+    scene.add(doorPanel);
+    
+    // Door knob
+    const doorKnob = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.8, roughness: 0.2 }) // Gold color
+    );
+    doorKnob.position.set(-5.4, 3.4, -9.5);
+    scene.add(doorKnob);
+    
+    // Add a small table
+    const tableTop = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.1, 1),
+        new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown wood
+    );
+    tableTop.position.set(5, 1.5, -8);
+    tableTop.castShadow = true;
+    tableTop.receiveShadow = true;
+    scene.add(tableTop);
+    
+    // Table legs
+    for (let x = -0.8; x <= 0.8; x += 1.6) {
+        for (let z = -0.4; z <= 0.4; z += 0.8) {
+            const leg = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 1.5, 0.1),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+            );
+            leg.position.set(5 + x, 0.75, -8 + z);
+            leg.castShadow = true;
+            leg.receiveShadow = true;
+            scene.add(leg);
+        }
+    }
 }
 
 function onKeyDown(event) {
@@ -298,8 +367,18 @@ function onKeyDown(event) {
             break;
         case 'Space':
             if (canJump) {
-                velocity.y += 350;
+                velocity.y += 10; // More reasonable initial velocity
                 canJump = false;
+                
+                // Add a small upward force over time for smoother jump
+                let jumpForce = 0;
+                const jumpInterval = setInterval(() => {
+                    velocity.y += 2;
+                    jumpForce += 2;
+                    if (jumpForce >= 20) {
+                        clearInterval(jumpInterval);
+                    }
+                }, 20);
             }
             break;
     }
@@ -326,6 +405,16 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Add wall boundaries
+const ROOM_SIZE = 9.7; // Slightly less than 10 to avoid clipping
+
+// Check if position is within room boundaries
+function checkBoundaries(position) {
+    position.x = Math.max(-ROOM_SIZE, Math.min(ROOM_SIZE, position.x));
+    position.z = Math.max(-ROOM_SIZE, Math.min(ROOM_SIZE, position.z));
+    return position;
 }
 
 function updateCharacterPosition() {
@@ -360,9 +449,17 @@ function updateCharacterPosition() {
             moveVector.x = direction.x * Math.cos(angle) + direction.z * Math.sin(angle);
             moveVector.z = direction.z * Math.cos(angle) - direction.x * Math.sin(angle);
             
-            // Apply movement
-            character.position.x += moveVector.x * moveSpeed;
-            character.position.z += moveVector.z * moveSpeed;
+            // Calculate new position with wall collision detection
+            const newPosition = new THREE.Vector3(
+                character.position.x + moveVector.x * moveSpeed,
+                character.position.y,
+                character.position.z + moveVector.z * moveSpeed
+            );
+            
+            // Check boundaries before applying movement
+            const boundedPosition = checkBoundaries(newPosition);
+            character.position.x = boundedPosition.x;
+            character.position.z = boundedPosition.z;
             
             // Rotate character to face movement direction
             const targetAngle = Math.atan2(moveVector.x, moveVector.z);
@@ -384,13 +481,29 @@ function updateCharacterPosition() {
                 currentAnimation = 'idle';
             }
         }
-        // Apply gravity and jumping
-        velocity.y -= 20 * delta;
+        // Apply gravity and jumping with improved physics
+        velocity.y -= 25 * delta; // Slightly stronger gravity
         character.position.y += velocity.y * delta;
+        
+        // Check if character is on the ground
         if (character.position.y < 0) {
             velocity.y = 0;
             character.position.y = 0;
             canJump = true;
+        }
+        
+        // Smoother jump animation
+        if (!canJump && velocity.y > 0) {
+            // During upward jump phase
+            if (character.animations && character.animations.jump) {
+                if (currentAnimation !== 'jump') {
+                    const jumpAnim = character.animations.jump;
+                    const currentAnim = character.animations[currentAnimation];
+                    if (currentAnim) currentAnim.crossFadeTo(jumpAnim, 0.1, true);
+                    jumpAnim.play();
+                    currentAnimation = 'jump';
+                }
+            }
         }
         // Update camera position based on character and mouse movement
         const cameraDistance = 5;
